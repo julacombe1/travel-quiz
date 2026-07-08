@@ -721,7 +721,6 @@ function getMonthLabel(monthKey) {
 
   return months[monthKey] || monthKey || "";
 }
-
 function formatDateFr(value) {
   if (!value) return "";
 
@@ -733,7 +732,6 @@ function formatDateFr(value) {
 
   return date.toLocaleDateString("fr-FR");
 }
-
 function getTravelPeriodLabel(userAnswers = {}) {
   const exactDates = userAnswers.exactDates;
 
@@ -806,17 +804,7 @@ function formatSummaryTable(userAnswers = {}, budgetBreakdown = {}) {
   `;
 }
 
-function formatDateFr(value) {
-  if (!value) return "";
 
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return String(value);
-  }
-
-  return date.toLocaleDateString("fr-FR");
-}
 
 function formatTravelPeriod(userAnswers = {}) {
   const exactDates = userAnswers.exactDates;
