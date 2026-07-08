@@ -21,6 +21,21 @@ const MONTH_LABELS = {
   best: "Meilleur mois demandé automatiquement",
 };
 
+const MONTH_KEYS = [
+  "janvier",
+  "fevrier",
+  "mars",
+  "avril",
+  "mai",
+  "juin",
+  "juillet",
+  "aout",
+  "septembre",
+  "octobre",
+  "novembre",
+  "decembre",
+];
+
 const AVENTURE_LABELS = {
   7: "Full aventure",
   6: "Aventure",
@@ -232,6 +247,16 @@ function hasValue(value) {
   return true;
 }
 
+function normalizeMonthKey(value) {
+  if (!value) return "";
+
+  return String(value)
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
 function getParisOrderId() {
   const now = new Date();
 
@@ -258,6 +283,12 @@ function formatMoney(value) {
   return `${Math.round(number).toLocaleString("fr-FR")} €`;
 }
 
+function formatNumber(value, suffix = "") {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "";
+  return `${number.toLocaleString("fr-FR")}${suffix}`;
+}
+
 function getDestinationName(request) {
   if (request?.mode === "customDestination" && request?.customDestination) {
     return request.customDestination;
@@ -268,6 +299,15 @@ function getDestinationName(request) {
     request?.destination?.name ||
     "Destination non renseignée"
   );
+}
+
+function getDestinationRankLabel(rank) {
+  const number = Number(rank);
+
+  if (!Number.isFinite(number) || number <= 0) return "";
+  if (number === 1) return "1ère destination proposée par l’application";
+
+  return `${number}e destination proposée par l’application`;
 }
 
 function getContactModeLabel(mode) {
@@ -340,6 +380,588 @@ function getBudgetLevelLabel(value) {
   return labels[Number(value)] || "";
 }
 
+function getMonthLabel(monthKey) {
+  const normalized = normalizeMonthKey(monthKey);
+  return MONTH_LABELS[monthKey] || MONTH_LABELS[normalized] || monthKey || "";
+}
+
+function formatDateFr(value) {
+  if (!value) return "";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+
+  return date.toLocaleDateString("fr-FR");
+}
+
+function getTravelPeriodLabel(userAnswers = {}) {
+  const exactDates = userAnswers.exactDates;
+
+  if (exactDates?.from || exactDates?.to) {
+    return `${formatDateFr(exactDates.from) || "?"} → ${
+      formatDateFr(exactDates.to) || "?"
+    }`;
+  }
+
+  if (userAnswers.selectedMonth === "best") {
+    return "Meilleur mois demandé automatiquement";
+  }
+
+  if (userAnswers.selectedMonth) {
+    return getMonthLabel(userAnswers.selectedMonth);
+  }
+
+  return "";
+}
+
+function getMonthKeyForDestinationInfo(userAnswers = {}, request = {}) {
+  if (userAnswers.selectedMonth && userAnswers.selectedMonth !== "best") {
+    return normalizeMonthKey(userAnswers.selectedMonth);
+  }
+
+  if (userAnswers.exactDates?.from) {
+    const date = new Date(userAnswers.exactDates.from);
+
+    if (!Number.isNaN(date.getTime())) {
+      return MONTH_KEYS[date.getMonth()];
+    }
+  }
+
+  return normalizeMonthKey(
+    request?.monthKey ||
+      request?.bestMonthKey ||
+      request?.destination?.bestMonthKey ||
+      request?.destination?.bestMonth ||
+      ""
+  );
+}
+
+function formatDestinationBlock(request, destinationName) {
+  if (request?.mode === "customDestination") {
+    return `
+      <div class="destination-block">
+        <div class="destination-name">${escapeHtml(destinationName)}</div>
+        <div class="destination-meta">Destination renseignée manuellement par l’utilisateur</div>
+      </div>
+    `;
+  }
+
+  const rankLabel = getDestinationRankLabel(request?.destinationRank);
+
+  return `
+    <div class="destination-block">
+      <div class="destination-name">${escapeHtml(destinationName)}</div>
+      ${
+        rankLabel
+          ? `<div class="destination-meta">${escapeHtml(rankLabel)}</div>`
+          : ""
+      }
+    </div>
+  `;
+}
+
+function formatSummaryTable(userAnswers = {}, budgetBreakdown = {}) {
+  const estimatedBudget = getBudgetValue(budgetBreakdown, ["total"]);
+  const periodLabel = getTravelPeriodLabel(userAnswers);
+
+  const cells = [
+    ["Voyageurs", userAnswers.travelers || ""],
+    ["Durée", userAnswers.tripDays ? `${userAnswers.tripDays} jours` : ""],
+    ["Période", periodLabel],
+    ["Budget renseigné", formatMoney(userAnswers.budgetTotal)],
+    ["Budget estimé", formatMoney(estimatedBudget)],
+  ];
+
+  const relaunchRow =
+    userAnswers.usedFinalBudgetRelaunch === true
+      ? compactRow("Relance budget", "Utilisée depuis l’écran résultat")
+      : "";
+
+  return `
+    <h2 class="section-title">Résumé du voyage</h2>
+
+    <table class="summary-grid">
+      <tr>
+        ${cells
+          .map(
+            ([label, value]) => `
+              <td class="summary-cell">
+                <div class="summary-label">${escapeHtml(label)}</div>
+                <div class="summary-value ${
+                  label === "Période" ? "small" : ""
+                }">${escapeHtml(value)}</div>
+              </td>
+            `
+          )
+          .join("")}
+      </tr>
+    </table>
+
+    ${
+      relaunchRow
+        ? `
+          <table class="mini-table">
+            ${relaunchRow}
+          </table>
+        `
+        : ""
+    }
+  `;
+}
+
+function formatDuelPreferences(userAnswers = {}) {
+  const rows = [];
+
+  const aventureValue = Number(userAnswers.aventure);
+  const villeValue = Number(userAnswers.ville);
+
+  if (Number.isFinite(aventureValue)) {
+    rows.push([
+      "Duel Aventure / Farniente",
+      AVENTURE_LABELS[aventureValue] ?? aventureValue,
+    ]);
+  }
+
+  if (Number.isFinite(villeValue)) {
+    rows.push([
+      "Duel Ville / Activité",
+      VILLE_LABELS[villeValue] ?? villeValue,
+    ]);
+  }
+
+  if (!rows.length) return "";
+
+  return `
+    <h2 class="section-title">Profil général</h2>
+    <table class="mini-table">
+      ${rows.map(([label, value]) => compactRow(label, value)).join("")}
+    </table>
+  `;
+}
+
+function formatBudgetPreferences(userAnswers = {}) {
+  const rows = [
+    ["Logement", getBudgetLevelLabel(userAnswers?.budgetLogement)],
+    ["Nourriture", getBudgetLevelLabel(userAnswers?.budgetFood)],
+    ["Activités", getBudgetLevelLabel(userAnswers?.budgetActivite)],
+  ].filter(([, value]) => value);
+
+  if (!rows.length) return "";
+
+  return `
+    <h2 class="section-title">Niveaux de budget choisis</h2>
+    <table class="mini-table">
+      ${rows.map(([label, value]) => compactRow(label, value)).join("")}
+    </table>
+  `;
+}
+
+function getYesNoIndifferentLabel(value) {
+  const labels = {
+    oui: "Oui",
+    non: "Non",
+    indifferent: "Indifférent",
+  };
+
+  return labels[value] || value || "";
+}
+
+function isDefaultTransportModes(modes = {}) {
+  return (
+    modes.indifferent === true &&
+    modes.voiture === false &&
+    modes.commun === false &&
+    modes.taxi === false &&
+    modes.vtc === false
+  );
+}
+
+function getSelectedTransportModes(userAnswers = {}) {
+  const modes = userAnswers.transportModes || {};
+  const labels = [];
+
+  if (modes.voiture) {
+    labels.push(
+      userAnswers?.avion === "non"
+        ? "Voiture personnelle"
+        : "Voiture de location"
+    );
+  }
+
+  if (modes.commun) labels.push("Transports en commun");
+  if (modes.taxi) labels.push("Taxi");
+  if (modes.vtc) labels.push("VTC");
+
+  return labels;
+}
+
+function getSelectedPapers(userAnswers = {}) {
+  const papiers = userAnswers.papiers || {};
+  const labels = [];
+
+  if (papiers.carte) labels.push("Carte d’identité");
+  if (papiers.passeport) labels.push("Passeport");
+  if (papiers.visa) labels.push("Visa");
+  if (papiers.evisa) labels.push("E-visa");
+  if (papiers.complex) labels.push("Complexité administrative");
+
+  return labels;
+}
+
+function formatTransportAnswers(userAnswers = {}) {
+  const rows = [];
+
+  if (userAnswers.avion && userAnswers.avion !== "indifferent") {
+    rows.push(["Avion", getYesNoIndifferentLabel(userAnswers.avion)]);
+  }
+
+  if (userAnswers.hmaxEnabled) {
+    rows.push(["Limiter la durée du trajet", `${userAnswers.hmax} h maximum`]);
+  }
+
+  if (userAnswers.transportEnabled === false) {
+    rows.push(["Transport sur place", "Non"]);
+  }
+
+  if (
+    userAnswers.transportEnabled !== false &&
+    userAnswers.transportModes &&
+    !isDefaultTransportModes(userAnswers.transportModes)
+  ) {
+    const selectedModes = getSelectedTransportModes(userAnswers);
+
+    if (selectedModes.length) {
+      rows.push(["Transports sur place sélectionnés", selectedModes.join(", ")]);
+    }
+  }
+
+  if (userAnswers.fran && userAnswers.fran !== "indifferent") {
+    rows.push([
+      "Destination francophone",
+      getYesNoIndifferentLabel(userAnswers.fran),
+    ]);
+  }
+
+  if (userAnswers.papiersEnabled) {
+    const selectedPapers = getSelectedPapers(userAnswers);
+
+    rows.push([
+      "Exigence administrative",
+      selectedPapers.length ? selectedPapers.join(", ") : "Oui",
+    ]);
+  }
+
+  if (!rows.length) return "";
+
+  return `
+    <h2 class="section-title">Préférences transport et administratif</h2>
+    <table class="mini-table">
+      ${rows.map(([label, value]) => compactRow(label, value)).join("")}
+    </table>
+  `;
+}
+
+function formatRange(min, max, unit = "°C") {
+  const hasMin = min !== null && min !== undefined && min !== "";
+  const hasMax = max !== null && max !== undefined && max !== "";
+
+  if (!hasMin && !hasMax) return "";
+  if (hasMin && hasMax) return `${min}${unit} à ${max}${unit}`;
+  if (hasMin) return `${min}${unit} ou plus`;
+
+  return `jusqu’à ${max}${unit}`;
+}
+
+function getReliefLabels(userAnswers = {}) {
+  const relief = userAnswers.relief || {};
+  const labels = {
+    indifferent: "Indifférent",
+    vegetalise: "Végétalisé",
+    alpin: "Alpin",
+    cotier: "Côtier",
+    volcanique: "Volcanique",
+    tropical: "Tropical",
+    desertique: "Désertique",
+    foret: "Forêt",
+  };
+
+  if (typeof userAnswers.relief === "string") {
+    const value = userAnswers.relief;
+    if (!value || value === "indifferent") return [];
+    return [labels[value] || value];
+  }
+
+  return Object.entries(labels)
+    .filter(([key]) => key !== "indifferent" && relief[key] === true)
+    .map(([, label]) => label);
+}
+
+function formatClimateSecurityRelief(userAnswers = {}) {
+  const rows = [];
+  const reliefLabels = getReliefLabels(userAnswers);
+
+  if (reliefLabels.length) {
+    rows.push(["Relief souhaité", reliefLabels.join(", ")]);
+  }
+
+  if (Number(userAnswers.chal) > 0) {
+    const heatRange = formatRange(userAnswers.chalMin, userAnswers.chalMax);
+
+    rows.push([
+      "Chaleur",
+      heatRange ? `${userAnswers.chal}/5 — ${heatRange}` : `${userAnswers.chal}/5`,
+    ]);
+  }
+
+  if (Number(userAnswers.secu) > 0) {
+    rows.push(["Sécurité", `${userAnswers.secu}/5`]);
+  }
+
+  if (!rows.length) return "";
+
+  return `
+    <h2 class="section-title">Chaleur, sécurité et relief</h2>
+    <table class="mini-table">
+      ${rows.map(([label, value]) => compactRow(label, value)).join("")}
+    </table>
+  `;
+}
+
+function formatThemeGroup(group, userAnswers = {}) {
+  const rows = group.items
+    .map((theme) => {
+      const score = Number(userAnswers?.[theme.key]);
+
+      if (!Number.isFinite(score) || score <= 0) return "";
+
+      return compactRow(theme.label, `${score}/${theme.max}`);
+    })
+    .filter(Boolean)
+    .join("");
+
+  if (!rows.trim()) return "";
+
+  return `
+    <h3 class="subsection-title">${escapeHtml(group.title)}</h3>
+    <table class="mini-table">
+      ${rows}
+    </table>
+  `;
+}
+
+function formatGroupedThemes(userAnswers = {}) {
+  const html = THEMES_GROUPS
+    .map((group) => formatThemeGroup(group, userAnswers))
+    .join("");
+
+  if (!html.trim()) return "";
+
+  return `
+    <h2 class="section-title">Thèmes activés</h2>
+    ${html}
+  `;
+}
+
+function formatBudgetBreakdown(budgetBreakdown = {}) {
+  const rows = [
+    ["Transport initial", getBudgetValue(budgetBreakdown, ["avion", "initialTransport"])],
+    ["Transport local", getBudgetValue(budgetBreakdown, ["transport", "localTransport"])],
+    ["Logement", getBudgetValue(budgetBreakdown, ["logement"])],
+    ["Nourriture", getBudgetValue(budgetBreakdown, ["bouffe", "food"])],
+    ["Activités", getBudgetValue(budgetBreakdown, ["activites", "activities"])],
+    ["Rémunération Travel Planner", getBudgetValue(budgetBreakdown, ["travelPlanner", "planner"])],
+    ["Total estimé", getBudgetValue(budgetBreakdown, ["total"])],
+  ].filter(([, value]) => value !== null && value !== undefined && value !== "");
+
+  if (!rows.length) return "";
+
+  return `
+    <h2 class="section-title">Budget estimé par l'application</h2>
+    <table class="mini-table">
+      ${rows
+        .map(
+          ([label, value]) => `
+            <tr>
+              <td class="mini-label">${escapeHtml(label)}</td>
+              <td class="mini-value align-right">${escapeHtml(formatMoney(value))}</td>
+            </tr>
+          `
+        )
+        .join("")}
+    </table>
+  `;
+}
+
+function getDestinationForComments(request = {}) {
+  return request?.destination || request?.result?.destination || request?.result || {};
+}
+
+function getCommentFromDestination(destination = {}, key) {
+  const possibleKeys = [
+    `${key}c`,
+    `${key}C`,
+    `${key}_comment`,
+    `${key}Comment`,
+    `${key}comment`,
+    `${key}Commentaires`,
+    `${key}commentaire`,
+  ];
+
+  for (const possibleKey of possibleKeys) {
+    const value = destination[possibleKey];
+
+    if (hasValue(value)) {
+      return value;
+    }
+  }
+
+  return "";
+}
+
+function readMonthlyValue(destination = {}, possibleBases = [], monthKey) {
+  if (!destination || !monthKey) return null;
+
+  const normalizedMonth = normalizeMonthKey(monthKey);
+  const capitalizedMonth =
+    normalizedMonth.charAt(0).toUpperCase() + normalizedMonth.slice(1);
+
+  for (const base of possibleBases) {
+    const possibleKeys = [
+      `${base}${normalizedMonth}`,
+      `${base}_${normalizedMonth}`,
+      `${base}.${normalizedMonth}`,
+      `${base}${capitalizedMonth}`,
+      `${base}_${capitalizedMonth}`,
+    ];
+
+    if (
+      destination[base] &&
+      typeof destination[base] === "object" &&
+      destination[base][normalizedMonth] !== undefined
+    ) {
+      return destination[base][normalizedMonth];
+    }
+
+    for (const key of possibleKeys) {
+      if (destination[key] !== undefined) {
+        return destination[key];
+      }
+    }
+  }
+
+  return null;
+}
+
+function formatDestinationTemperatures({ request, userAnswers }) {
+  if (request?.mode === "customDestination") return "";
+
+  const destination = request?.destination || {};
+  const monthKey = getMonthKeyForDestinationInfo(userAnswers, request);
+  const monthLabel = getMonthLabel(monthKey);
+
+  const rows = [];
+
+  const airTemp = readMonthlyValue(
+    destination,
+    [
+      "temp",
+      "temperature",
+      "temperatureAir",
+      "tempAir",
+      "tempmoy",
+      "temperatureMoy",
+      "chaleur",
+      "chal",
+      "t",
+    ],
+    monthKey
+  );
+
+  if (hasValue(airTemp)) {
+    rows.push([`Température destination ${monthLabel ? `(${monthLabel})` : ""}`, formatNumber(airTemp, "°C")]);
+  }
+
+  const waterTemp = readMonthlyValue(
+    destination,
+    [
+      "teau",
+      "eau",
+      "tempEau",
+      "temperatureEau",
+      "merTemp",
+      "tempMer",
+      "temperatureMer",
+    ],
+    monthKey
+  );
+
+  if (
+    hasValue(waterTemp) &&
+    (Number(userAnswers.mer) > 0 ||
+      Number(userAnswers.bain) > 0 ||
+      Number(userAnswers.inso) > 0)
+  ) {
+    rows.push([`Température de l’eau ${monthLabel ? `(${monthLabel})` : ""}`, formatNumber(waterTemp, "°C")]);
+  }
+
+  if (!rows.length) return "";
+
+  return `
+    <h3 class="subsection-title">Températures affichées</h3>
+    <table class="mini-table">
+      ${rows.map(([label, value]) => compactRow(label, value)).join("")}
+    </table>
+  `;
+}
+
+function formatDisplayedComments({ request, userAnswers }) {
+  if (request?.mode === "customDestination") {
+    return "";
+  }
+
+  const destination = getDestinationForComments(request);
+  const temperaturesHtml = formatDestinationTemperatures({ request, userAnswers });
+
+  const rows = COMMENT_CONFIG
+    .map((item) => {
+      const answerValue = Number(userAnswers?.[item.key]);
+
+      if (!Number.isFinite(answerValue) || answerValue <= 0) return "";
+
+      const comment = getCommentFromDestination(destination, item.key);
+
+      if (!hasValue(comment)) return "";
+
+      return `
+        <li>
+          <strong>${escapeHtml(item.icon)} ${escapeHtml(item.label)} :</strong>
+          ${escapeHtml(comment)}
+        </li>
+      `;
+    })
+    .filter(Boolean)
+    .join("");
+
+  if (!rows.trim() && !temperaturesHtml.trim()) return "";
+
+  return `
+    <h2 class="section-title">Informations affichées à l'utilisateur</h2>
+    ${temperaturesHtml}
+    ${
+      rows.trim()
+        ? `
+          <ul class="comment-list">
+            ${rows}
+          </ul>
+        `
+        : ""
+    }
+  `;
+}
+
 function buildEmailHtml(payload, orderId) {
   const { contact, request } = payload;
 
@@ -349,24 +971,125 @@ function buildEmailHtml(payload, orderId) {
 
   return `
     <div style="font-family:Arial,sans-serif; color:#2f2440; background:#f7f1fb; padding:18px;">
+      <style>
+        .section-title {
+          margin: 18px 0 8px;
+          font-size: 16px;
+          color: #3b284c;
+          border-bottom: 1px solid #eadcf4;
+          padding-bottom: 5px;
+        }
+
+        .subsection-title {
+          margin: 12px 0 5px;
+          font-size: 14px;
+          color: #6c3b85;
+        }
+
+        .destination-block {
+          margin: 10px 0 14px;
+          padding: 14px;
+          border-radius: 14px;
+          background: #f9eefc;
+        }
+
+        .destination-name {
+          font-size: 24px;
+          font-weight: 900;
+          color: #d94b8c;
+        }
+
+        .destination-meta {
+          margin-top: 4px;
+          font-size: 13px;
+          font-weight: 700;
+          color: #6c5b75;
+        }
+
+        .summary-grid {
+          width: 100%;
+          border-collapse: separate;
+          border-spacing: 6px;
+          margin: 6px 0 10px;
+        }
+
+        .summary-cell {
+          background: #f9eefc;
+          border-radius: 12px;
+          padding: 9px;
+          vertical-align: top;
+          width: 20%;
+        }
+
+        .summary-label {
+          font-size: 11px;
+          color: #7a5b8d;
+          margin-bottom: 4px;
+        }
+
+        .summary-value {
+          font-size: 17px;
+          font-weight: 900;
+          color: #2f2440;
+        }
+
+        .summary-value.small {
+          font-size: 13px;
+          line-height: 1.25;
+        }
+
+        .mini-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 4px;
+        }
+
+        .mini-label {
+          width: 42%;
+          padding: 6px 7px;
+          border-bottom: 1px solid #eee;
+          color: #6c5b75;
+          font-size: 12px;
+        }
+
+        .mini-value {
+          padding: 6px 7px;
+          border-bottom: 1px solid #eee;
+          font-weight: 700;
+          font-size: 12px;
+        }
+
+        .align-right {
+          text-align: right;
+        }
+
+        .comment-list {
+          margin-top: 6px;
+          padding-left: 18px;
+        }
+
+        .comment-list li {
+          margin-bottom: 5px;
+          font-size: 13px;
+          line-height: 1.35;
+        }
+      </style>
+
       <div style="max-width:760px; margin:0 auto; background:white; border-radius:18px; padding:20px;">
         <h1 style="margin:0 0 12px; color:#8d45b5; font-size:22px;">
           Nouvelle demande Travel Planner — ${escapeHtml(orderId)}
         </h1>
 
-        <p><strong>Destination :</strong> ${escapeHtml(destinationName)}</p>
-        <p><strong>Voyageurs :</strong> ${escapeHtml(userAnswers.travelers || "")}</p>
-        <p><strong>Durée :</strong> ${escapeHtml(userAnswers.tripDays || "")} jours</p>
-        <p><strong>Budget renseigné :</strong> ${escapeHtml(formatMoney(userAnswers.budgetTotal))}</p>
-        <p><strong>Budget estimé :</strong> ${escapeHtml(formatMoney(getBudgetValue(budgetBreakdown, ["total"])) )}</p>
-
-        <h2>Coordonnées client</h2>
-        <p><strong>Mode :</strong> ${escapeHtml(getContactModeLabel(contact?.contactMode))}</p>
-        <p><strong>Prénom :</strong> ${escapeHtml(contact?.firstName || "")}</p>
-        <p><strong>Nom :</strong> ${escapeHtml(contact?.lastName || "")}</p>
-        <p><strong>Téléphone :</strong> ${escapeHtml(contact?.phone || "")}</p>
-        <p><strong>WhatsApp :</strong> ${escapeHtml(contact?.whatsapp || "")}</p>
-        <p><strong>Email :</strong> ${escapeHtml(contact?.email || "")}</p>
+        ${formatContactTable(contact)}
+        ${formatDestinationBlock(request, destinationName)}
+        ${formatSummaryTable(userAnswers, budgetBreakdown)}
+        ${formatDuelPreferences(userAnswers)}
+        ${formatBudgetPreferences(userAnswers)}
+        ${formatTransportAnswers(userAnswers)}
+        ${formatClimateSecurityRelief(userAnswers)}
+        ${formatGroupedThemes(userAnswers)}
+        ${formatBudgetBreakdown(budgetBreakdown)}
+        ${formatDisplayedComments({ request, userAnswers })}
       </div>
     </div>
   `;
@@ -409,6 +1132,12 @@ export default async function handler(req, res) {
       subject,
       html: buildEmailHtml(payload, orderId),
     });
+
+    if (result?.error) {
+      throw new Error(
+        result.error?.message || "Erreur Resend pendant l'envoi de l'email."
+      );
+    }
 
     return res.status(200).json({
       success: true,
