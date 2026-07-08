@@ -349,17 +349,7 @@ const handleRestart = () => {
   setHistory(["start"]);
 };
 
-const handlePlanTrip = (payload) => {
-  const destination = payload?.destination ?? payload;
-  const budgetBreakdown = payload?.budgetBreakdown ?? null;
-
-  setPlannedTrip({
-    destination,
-    budgetBreakdown,
-  });
-
-  goTo("plan-trip");
-};
+handlePlanT
 
 const handleTripInterest = (payload = {}) => {
   setContactRequest({

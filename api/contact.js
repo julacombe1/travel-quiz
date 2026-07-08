@@ -40,6 +40,7 @@ function getBudgetValue(budgetBreakdown, keys = []) {
   return null;
 }
 
+
 function formatBudgetBreakdown(budgetBreakdown) {
   const rows = [
     ["Transport initial", getBudgetValue(budgetBreakdown, ["avion", "initialTransport"])],
@@ -278,6 +279,36 @@ function formatTransportAnswers(userAnswers) {
   `;
 }
 
+function getDestinationRankLabel(rank) {
+  const number = Number(rank);
+
+  if (!Number.isFinite(number) || number <= 0) return "";
+
+  if (number === 1) return "1ère destination trouvée";
+
+  return `${number}e destination trouvée`;
+}
+
+function formatDestinationMeta(request) {
+  if (request?.mode === "customDestination") {
+    return `
+      <p>
+        <strong>Destination renseignée manuellement par l'utilisateur</strong>
+      </p>
+    `;
+  }
+
+  const rankLabel = getDestinationRankLabel(request?.destinationRank);
+
+  if (!rankLabel) return "";
+
+  return `
+    <p>
+      <strong>${escapeHtml(rankLabel)}</strong>
+    </p>
+  `;
+}
+
 function buildEmailHtml(payload, orderId) {
   const { contact, request } = payload;
 
@@ -303,11 +334,7 @@ ${infoLine("Commentaire", contact.comment)}
       <p style="font-size:26px; font-weight:900; color:#d94b8c;">
         ${escapeHtml(destinationName)}
       </p>
-      <p><strong>Type :</strong> ${
-  request?.mode === "customDestination"
-    ? "<p><strong>Type :</strong> Destination saisie manuellement par l'utilisateur</p>"
-    : ""
-}</p>
+    ${formatDestinationMeta(request)}
 
 <h2>Résumé du voyage</h2>
 
@@ -353,28 +380,11 @@ ${
 }
 ${formatBudgetPreferences(userAnswers)}
 ${formatTransportAnswers(userAnswers)}
+${formatActivatedThemes(userAnswers)}
 
+${formatBudgetBreakdown(budgetBreakdown)}
 
-      <h2>Budget proposé par l'application</h2>
-      <ul>
-        <li><strong>Transport initial :</strong> ${escapeHtml(formatMoney(budgetBreakdown.initialTransport))}</li>
-        <li><strong>Transport local :</strong> ${escapeHtml(formatMoney(budgetBreakdown.localTransport))}</li>
-        <li><strong>Logement :</strong> ${escapeHtml(formatMoney(budgetBreakdown.logement))}</li>
-        <li><strong>Nourriture :</strong> ${escapeHtml(formatMoney(budgetBreakdown.food))}</li>
-        <li><strong>Activités :</strong> ${escapeHtml(formatMoney(budgetBreakdown.activities))}</li>
-        <li><strong>Rémunération Travel Planner :</strong> ${escapeHtml(formatMoney(budgetBreakdown.travelPlanner))}</li>
-        <li><strong>Total :</strong> ${escapeHtml(formatMoney(budgetBreakdown.total))}</li>
-      </ul>
-
-<h2>Résumé de la demande</h2>
-<ul>
-  <li><strong>Mode :</strong> ${escapeHtml(request?.mode || "Non renseigné")}</li>
-  <li><strong>Destination :</strong> ${escapeHtml(destinationName)}</li>
-  <li><strong>Voyageurs :</strong> ${escapeHtml(userAnswers.travelers || "Non renseigné")}</li>
-  <li><strong>Durée :</strong> ${escapeHtml(userAnswers.tripDays || "Non renseigné")} jours</li>
-  <li><strong>Budget utilisateur :</strong> ${escapeHtml(formatMoney(userAnswers.budgetTotal))}</li>
-</ul>
-    </div>
+${formatDisplayedComments({ request, userAnswers })}
   `;
 }
 
