@@ -339,3 +339,94 @@ function getBudgetLevelLabel(value) {
 
   return labels[Number(value)] || "";
 }
+
+function buildEmailHtml(payload, orderId) {
+  const { contact, request } = payload;
+
+  const userAnswers = request?.emailContext?.userAnswers || {};
+  const destinationName = getDestinationName(request);
+  const budgetBreakdown = request?.budgetBreakdown || {};
+
+  return `
+    <div style="font-family:Arial,sans-serif; color:#2f2440; background:#f7f1fb; padding:18px;">
+      <div style="max-width:760px; margin:0 auto; background:white; border-radius:18px; padding:20px;">
+        <h1 style="margin:0 0 12px; color:#8d45b5; font-size:22px;">
+          Nouvelle demande Travel Planner — ${escapeHtml(orderId)}
+        </h1>
+
+        <p><strong>Destination :</strong> ${escapeHtml(destinationName)}</p>
+        <p><strong>Voyageurs :</strong> ${escapeHtml(userAnswers.travelers || "")}</p>
+        <p><strong>Durée :</strong> ${escapeHtml(userAnswers.tripDays || "")} jours</p>
+        <p><strong>Budget renseigné :</strong> ${escapeHtml(formatMoney(userAnswers.budgetTotal))}</p>
+        <p><strong>Budget estimé :</strong> ${escapeHtml(formatMoney(getBudgetValue(budgetBreakdown, ["total"])) )}</p>
+
+        <h2>Coordonnées client</h2>
+        <p><strong>Mode :</strong> ${escapeHtml(getContactModeLabel(contact?.contactMode))}</p>
+        <p><strong>Prénom :</strong> ${escapeHtml(contact?.firstName || "")}</p>
+        <p><strong>Nom :</strong> ${escapeHtml(contact?.lastName || "")}</p>
+        <p><strong>Téléphone :</strong> ${escapeHtml(contact?.phone || "")}</p>
+        <p><strong>WhatsApp :</strong> ${escapeHtml(contact?.whatsapp || "")}</p>
+        <p><strong>Email :</strong> ${escapeHtml(contact?.email || "")}</p>
+      </div>
+    </div>
+  `;
+}
+
+export default async function handler(req, res) {
+  if (req.method === "GET") {
+    return res.status(200).json({
+      success: true,
+      message: "API contact Vercel OK",
+      hasResendKey: Boolean(process.env.RESEND_API_KEY),
+      hasMailFrom: Boolean(process.env.MAIL_FROM),
+      hasMailTo: Boolean(process.env.MAIL_TO),
+    });
+  }
+
+  if (req.method !== "POST") {
+    return res.status(405).json({
+      message: "Méthode non autorisée.",
+    });
+  }
+
+  try {
+    const payload = req.body;
+
+    if (!payload?.contact || !payload?.request) {
+      return res.status(400).json({
+        message: "Données invalides.",
+      });
+    }
+
+    const orderId = getParisOrderId();
+    const destinationName = getDestinationName(payload.request);
+
+    const subject = `${orderId} — Nouvelle demande Travel Planner — ${destinationName}`;
+
+    const result = await resend.emails.send({
+      from: process.env.MAIL_FROM,
+      to: process.env.MAIL_TO,
+      subject,
+      html: buildEmailHtml(payload, orderId),
+    });
+
+    return res.status(200).json({
+      success: true,
+      orderId,
+      emailId: result?.data?.id,
+    });
+  } catch (error) {
+    console.error("ERREUR DETAILLEE /api/contact :", {
+      name: error?.name,
+      message: error?.message,
+      stack: error?.stack,
+      cause: error?.cause,
+    });
+
+    return res.status(500).json({
+      message:
+        error?.message || "Erreur serveur pendant l'envoi de la demande.",
+      name: error?.name || "UnknownError",
+    });
+  }
+}
