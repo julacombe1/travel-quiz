@@ -224,11 +224,69 @@ const apiBaseUrl =
 
     let data = {};
 
-    try {
-      data = await response.json();
-    } catch {
-      data = {};
-    }
+  try {
+  setIsSending(true);
+  setErrors({});
+  setSuccessInfo(null);
+
+  const apiBaseUrl = import.meta.env.PROD
+    ? ""
+    : import.meta.env.VITE_API_URL || "http://localhost:3001";
+
+  console.log("API appelée :", `${apiBaseUrl}/api/contact`);
+  console.log("Payload envoyé :", contactPayload);
+
+  const response = await fetch(`${apiBaseUrl}/api/contact`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(contactPayload),
+  });
+
+  const rawText = await response.text();
+
+  console.log("Réponse brute serveur :", rawText);
+
+  let data = {};
+
+  try {
+    data = rawText ? JSON.parse(rawText) : {};
+  } catch {
+    data = {
+      message: rawText,
+    };
+  }
+
+  console.log("Réponse serveur contact :", response.status, data);
+
+  if (!response.ok) {
+    throw new Error(
+      data?.message ||
+        `Erreur serveur ${response.status} pendant l'envoi de la demande.`
+    );
+  }
+
+  setSuccessInfo({
+    orderId: data.orderId,
+    message:
+      "Votre demande a bien été envoyée. Aurélie reviendra vers vous prochainement.",
+  });
+
+  if (onSubmitContact) {
+    onSubmitContact(data);
+  }
+} catch (error) {
+  console.error("Erreur envoi contact :", error);
+
+  setErrors({
+    submit:
+      error?.message ||
+      "Impossible d'envoyer la demande pour le moment. Merci de réessayer.",
+  });
+} finally {
+  setIsSending(false);
+}
 
     if (!response.ok) {
       throw new Error(data?.message || "Erreur pendant l'envoi de la demande.");
