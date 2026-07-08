@@ -754,17 +754,7 @@ function getTravelPeriodLabel(userAnswers = {}) {
   return "";
 }
 
-function getBudgetValue(budgetBreakdown, keys = []) {
-  for (const key of keys) {
-    const value = budgetBreakdown?.[key];
 
-    if (value !== undefined && value !== null && value !== "") {
-      return value;
-    }
-  }
-
-  return null;
-}
 
 function formatSummaryTable(userAnswers = {}, budgetBreakdown = {}) {
   const estimatedBudget = getBudgetValue(budgetBreakdown, ["total"]);
