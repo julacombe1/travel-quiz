@@ -11,6 +11,79 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+function getContactModeLabel(mode) {
+  const labels = {
+    phone: "Téléphone",
+    whatsapp: "WhatsApp",
+    email: "Email",
+  };
+
+  return labels[mode] || mode || "";
+}
+
+function hasValue(value) {
+  if (value === null || value === undefined) return false;
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === "string") return value.trim() !== "";
+  return true;
+}
+
+function getBudgetValue(budgetBreakdown, keys = []) {
+  for (const key of keys) {
+    const value = budgetBreakdown?.[key];
+
+    if (value !== undefined && value !== null && value !== "") {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+function formatBudgetBreakdown(budgetBreakdown) {
+  const rows = [
+    ["Transport initial", getBudgetValue(budgetBreakdown, ["avion", "initialTransport"])],
+    ["Transport local", getBudgetValue(budgetBreakdown, ["transport", "localTransport"])],
+    ["Logement", getBudgetValue(budgetBreakdown, ["logement"])],
+    ["Nourriture", getBudgetValue(budgetBreakdown, ["bouffe", "food"])],
+    ["Activités", getBudgetValue(budgetBreakdown, ["activites", "activities"])],
+    ["Rémunération Travel Planner", getBudgetValue(budgetBreakdown, ["travelPlanner", "planner"])],
+    ["Total estimé", getBudgetValue(budgetBreakdown, ["total"])],
+  ].filter(([, value]) => value !== null && value !== undefined && value !== "");
+
+  if (!rows.length) return "";
+
+  return `
+    <h2>Budget estimé par l'application</h2>
+
+    <table style="width:100%; border-collapse:collapse;">
+      <tbody>
+        ${rows
+          .map(
+            ([label, value]) => `
+              <tr>
+                <td style="padding:9px 8px; border-bottom:1px solid #eee;">
+                  ${escapeHtml(label)}
+                </td>
+                <td style="padding:9px 8px; border-bottom:1px solid #eee; text-align:right;">
+                  <strong>${escapeHtml(formatMoney(value))}</strong>
+                </td>
+              </tr>
+            `
+          )
+          .join("")}
+      </tbody>
+    </table>
+  `;
+}
+function infoLine(label, value) {
+  if (!hasValue(value)) return "";
+
+  const displayValue = Array.isArray(value) ? value.join(", ") : value;
+
+  return `<p><strong>${escapeHtml(label)} :</strong> ${escapeHtml(displayValue)}</p>`;
+}
+
 function getParisOrderId() {
   const now = new Date();
 
@@ -49,8 +122,161 @@ function getDestinationName(request) {
   );
 }
 
+function getBudgetLevelLabel(value) {
+  const labels = {
+    1: "Strict minimum",
+    2: "Économe",
+    3: "Équilibré",
+    4: "Confort",
+    5: "Plaisir",
+  };
 
+  return labels[Number(value)] || "";
+}
 
+function formatBudgetPreferences(userAnswers) {
+  const rows = [
+    ["Logement", getBudgetLevelLabel(userAnswers?.budgetLogement)],
+    ["Nourriture", getBudgetLevelLabel(userAnswers?.budgetFood)],
+    ["Activités", getBudgetLevelLabel(userAnswers?.budgetActivite)],
+  ].filter(([, value]) => value);
+
+  if (!rows.length) return "";
+
+  return `
+    <h2>Niveaux de budget choisis</h2>
+    <ul>
+      ${rows
+        .map(
+          ([label, value]) =>
+            `<li><strong>${escapeHtml(label)} :</strong> ${escapeHtml(value)}</li>`
+        )
+        .join("")}
+    </ul>
+  `;
+}
+
+function getYesNoIndifferentLabel(value) {
+  const labels = {
+    oui: "Oui",
+    non: "Non",
+    indifferent: "Indifférent",
+  };
+
+  return labels[value] || value || "";
+}
+
+function isDefaultTransportModes(modes = {}) {
+  return (
+    modes.indifferent === true &&
+    modes.voiture === false &&
+    modes.commun === false &&
+    modes.taxi === false &&
+    modes.vtc === false
+  );
+}
+
+function getSelectedTransportModes(userAnswers) {
+  const modes = userAnswers?.transportModes || {};
+  const labels = [];
+
+  if (modes.voiture) {
+    labels.push(
+      userAnswers?.avion === "non"
+        ? "Voiture personnelle"
+        : "Voiture de location"
+    );
+  }
+
+  if (modes.commun) labels.push("Transports en commun");
+  if (modes.taxi) labels.push("Taxi");
+  if (modes.vtc) labels.push("VTC");
+
+  return labels;
+}
+
+function getSelectedPapers(userAnswers) {
+  const papiers = userAnswers?.papiers || {};
+  const labels = [];
+
+  if (papiers.carte) labels.push("Carte d’identité");
+  if (papiers.passeport) labels.push("Passeport");
+  if (papiers.visa) labels.push("Visa");
+  if (papiers.evisa) labels.push("E-visa");
+  if (papiers.complex) labels.push("Complexité administrative");
+
+  return labels;
+}
+
+function formatTransportAnswers(userAnswers) {
+  const rows = [];
+
+  if (userAnswers?.avion && userAnswers.avion !== "indifferent") {
+    rows.push([
+      "Avion",
+      getYesNoIndifferentLabel(userAnswers.avion),
+    ]);
+  }
+
+  if (userAnswers?.hmaxEnabled) {
+    rows.push([
+      "Limiter la durée du trajet",
+      `${userAnswers.hmax} h maximum`,
+    ]);
+  }
+
+  if (userAnswers?.transportEnabled === false) {
+    rows.push([
+      "Transport sur place",
+      "Non",
+    ]);
+  }
+
+  if (
+    userAnswers?.transportEnabled !== false &&
+    userAnswers?.transportModes &&
+    !isDefaultTransportModes(userAnswers.transportModes)
+  ) {
+    const selectedModes = getSelectedTransportModes(userAnswers);
+
+    if (selectedModes.length) {
+      rows.push([
+        "Transports sur place sélectionnés",
+        selectedModes.join(", "),
+      ]);
+    }
+  }
+
+  if (userAnswers?.fran && userAnswers.fran !== "indifferent") {
+    rows.push([
+      "Destination francophone",
+      getYesNoIndifferentLabel(userAnswers.fran),
+    ]);
+  }
+
+  if (userAnswers?.papiersEnabled) {
+    const selectedPapers = getSelectedPapers(userAnswers);
+
+    rows.push([
+      "Exigence administrative",
+      selectedPapers.length ? selectedPapers.join(", ") : "Oui",
+    ]);
+  }
+
+  if (!rows.length) return "";
+
+  return `
+    <h2>Préférences transport et administratif</h2>
+    <ul>
+      ${rows
+        .map(
+          ([label, value]) =>
+            `<li><strong>${escapeHtml(label)} :</strong> ${escapeHtml(value)}</li>`
+        )
+        .join("")}
+    </ul>
+  `;
+}
 
 function buildEmailHtml(payload, orderId) {
   const { contact, request } = payload;
@@ -58,41 +284,76 @@ function buildEmailHtml(payload, orderId) {
   const userAnswers = request?.emailContext?.userAnswers || {};
   const destinationName = getDestinationName(request);
   const budgetBreakdown = request?.budgetBreakdown || {};
-
+const estimatedBudget = getBudgetValue(budgetBreakdown, ["total"]);
   return `
-    <div style="font-family:Arial,sans-serif; color:#2f2440; line-height:1.45;">
-      <h1>Nouvelle demande Travel Planner — ${escapeHtml(orderId)}</h1>
+    <div style="font-family:Arial,sans-serif; color:#2f2440; line-height:1.45;"
 
-      <h2>Coordonnées client</h2>
-      <p><strong>Mode de contact :</strong> ${escapeHtml(contact.contactMode)}</p>
-      <p><strong>Prénom :</strong> ${escapeHtml(contact.firstName || "Non renseigné")}</p>
-      <p><strong>Nom :</strong> ${escapeHtml(contact.lastName || "Non renseigné")}</p>
-      <p><strong>Téléphone :</strong> ${escapeHtml(contact.phone || "Non renseigné")}</p>
-      <p><strong>WhatsApp :</strong> ${escapeHtml(contact.whatsapp || "Non renseigné")}</p>
-      <p><strong>Email :</strong> ${escapeHtml(contact.email || "Non renseigné")}</p>
-      <p><strong>Jours préférés :</strong> ${escapeHtml(contact.preferredDays?.join(", ") || "Non renseigné")}</p>
-      <p><strong>Plage horaire :</strong> ${escapeHtml(contact.preferredTimeSlot || "Non renseigné")}</p>
-      <p><strong>Commentaire :</strong> ${escapeHtml(contact.comment || "Aucun")}</p>
+<h2>Coordonnées client</h2>
+${infoLine("Mode de contact", getContactModeLabel(contact.contactMode))}
+${infoLine("Prénom", contact.firstName)}
+${infoLine("Nom", contact.lastName)}
+${infoLine("Téléphone", contact.phone)}
+${infoLine("WhatsApp", contact.whatsapp)}
+${infoLine("Email", contact.email)}
+${infoLine("Jours préférés", contact.preferredDays)}
+${infoLine("Plage horaire", contact.preferredTimeSlot)}
+${infoLine("Commentaire", contact.comment)}
 
       <h2>Destination</h2>
       <p style="font-size:26px; font-weight:900; color:#d94b8c;">
         ${escapeHtml(destinationName)}
       </p>
       <p><strong>Type :</strong> ${
-        request?.mode === "customDestination"
-          ? "Destination saisie manuellement par l'utilisateur"
-          : "Destination proposée par l'application"
-      }</p>
+  request?.mode === "customDestination"
+    ? "<p><strong>Type :</strong> Destination saisie manuellement par l'utilisateur</p>"
+    : ""
+}</p>
 
-      <h2>Voyage</h2>
-      <p><strong>Nombre de voyageurs :</strong> ${escapeHtml(userAnswers.travelers || "Non renseigné")}</p>
-      <p><strong>Nombre de jours :</strong> ${escapeHtml(userAnswers.tripDays || "Non renseigné")}</p>
-      <p><strong>Budget renseigné :</strong> ${escapeHtml(formatMoney(userAnswers.budgetTotal))}</p>
-      ${
-        userAnswers.usedFinalBudgetRelaunch
-          ? "<p><strong>Relance budget :</strong> l'utilisateur a utilisé la relance avec budget maximum depuis l'écran résultat.</p>"
-          : ""
-      }
+<h2>Résumé du voyage</h2>
+
+<div style="
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  gap:12px;
+  margin:14px 0;
+">
+  <div style="background:#f9eefc; padding:14px; border-radius:14px;">
+    <div style="font-size:13px; color:#7a5b8d;">Voyageurs</div>
+    <div style="font-size:24px; font-weight:900;">
+      ${escapeHtml(userAnswers.travelers || "")}
+    </div>
+  </div>
+
+  <div style="background:#f9eefc; padding:14px; border-radius:14px;">
+    <div style="font-size:13px; color:#7a5b8d;">Durée</div>
+    <div style="font-size:24px; font-weight:900;">
+      ${escapeHtml(userAnswers.tripDays || "")} jours
+    </div>
+  </div>
+
+  <div style="background:#f9eefc; padding:14px; border-radius:14px;">
+    <div style="font-size:13px; color:#7a5b8d;">Budget renseigné</div>
+    <div style="font-size:24px; font-weight:900;">
+      ${escapeHtml(formatMoney(userAnswers.budgetTotal))}
+    </div>
+  </div>
+
+  <div style="background:#f9eefc; padding:14px; border-radius:14px;">
+    <div style="font-size:13px; color:#7a5b8d;">Budget estimé</div>
+    <div style="font-size:24px; font-weight:900;">
+      ${escapeHtml(formatMoney(estimatedBudget))}
+    </div>
+  </div>
+</div>
+
+${
+  userAnswers.usedFinalBudgetRelaunch
+    ? "<p><strong>Relance budget :</strong> l'utilisateur a utilisé la relance avec budget maximum depuis l'écran résultat.</p>"
+    : ""
+}
+${formatBudgetPreferences(userAnswers)}
+${formatTransportAnswers(userAnswers)}
+
 
       <h2>Budget proposé par l'application</h2>
       <ul>

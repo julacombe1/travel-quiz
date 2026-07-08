@@ -369,10 +369,10 @@ const handleTripInterest = (payload = {}) => {
     budgetBreakdown:
       payload.budgetBreakdown ?? plannedTrip?.budgetBreakdown ?? null,
 
-    emailContext: buildEmailContext(),
-
-    // Important :
-    // on n'envoie plus "results", car cela peut contenir tout le classement.
+    emailContext: {
+      userAnswers,
+      profileType: normalizedProfileType,
+    },
   });
 
   goTo("contact");
