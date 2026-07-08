@@ -1,0 +1,152 @@
+.star-rating {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  white-space: nowrap;   /* 🔥 empêche le retour à la ligne */
+  position: relative;
+  min-width: 170px;
+  z-index: 10;
+  overflow-x: hidden;
+}
+
+.stars {
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;   /* 🔥 empêche compression */
+}
+
+.star {
+  font-size: clamp(24px, 7vw, 44px); /* 🔑 beaucoup plus grand */
+  padding: 8px;                     /* zone tactile */
+  cursor: pointer;
+  color: rgb(136, 132, 132);          /* fond noir par défaut */
+  line-height: 1;
+
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.star.active {
+  color: #f5b301;
+}
+
+.star:hover {
+  transform: scale(1.15);
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #444;
+}
+
+.attrac-star {
+  transform: scale(1.6); /* 🔥 taille */
+  transform-origin: center;
+}
+
+/* ========================= */
+/* BASE */
+/* ========================= */
+
+.stars-wrapper {
+  display: flex;
+  gap: 4px;
+}
+
+.star-btn {
+  border: none;
+  background: transparent;
+  font-size: 28px;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.star-btn:hover {
+  transform: scale(1.15);
+}
+
+/* ========================= */
+/* DEFAULT */
+/* ========================= */
+
+.stars-wrapper.default .star-btn {
+  color: #d6d6d6;
+}
+
+.stars-wrapper.default .star-btn.active {
+  color: #ffc83d;
+}
+
+/* ========================= */
+/* TEMP / TOUR / SECU */
+/* ========================= */
+.stars-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  line-height: 1;
+}
+
+/* étoiles spéciales OFF */
+.stars-wrapper.temperature .star {
+  color: #8ea3c7;
+  opacity: 0.75;
+}
+
+/* si 1 étoile sélectionnée */
+.stars-wrapper.temperature:has(.temp-star-1.active):not(:has(.temp-star-2.active)) .star.active {
+  color: #0050ff;
+}
+
+/* si 2 étoiles sélectionnées */
+.stars-wrapper.temperature:has(.temp-star-2.active):not(:has(.temp-star-3.active)) .star.active {
+  color: #4fc3ff;
+}
+
+/* si 3 étoiles sélectionnées */
+.stars-wrapper.temperature:has(.temp-star-3.active):not(:has(.temp-star-4.active)) .star.active {
+  color: #ffe066;
+}
+
+/* si 4 étoiles sélectionnées */
+.stars-wrapper.temperature:has(.temp-star-4.active):not(:has(.temp-star-5.active)) .star.active {
+  color: #ffb347;
+}
+
+/* si 5 étoiles sélectionnées */
+.stars-wrapper.temperature:has(.temp-star-5.active) .star.active {
+  color: #ff8c00;
+}
+
+/* ========================= */
+/* BLINK STAR */
+/* ========================= */
+
+.stars-wrapper.blink .star {
+  color: rgb(136, 132, 132);
+  opacity: 0.55;
+  display: inline-block;
+  animation: blinkStarAttrac 0.9s infinite ease-in-out;
+}
+
+.stars-wrapper.blink .star.active {
+  color: #ffd700;
+  opacity: 1;
+  animation: none;
+  filter: drop-shadow(0 0 10px #ffd700);
+}
+
+@keyframes blinkStarAttrac {
+  0%, 100% {
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 0px #999);
+  }
+
+  50% {
+    transform: scale(1.55);
+    filter: drop-shadow(0 0 10px #999);
+  }
+}

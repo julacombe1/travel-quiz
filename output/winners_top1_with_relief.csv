@@ -1,0 +1,86 @@
+DESCRIPTION;Classement des destinations par nb de victoires (top1) sur tous les scénarios rando/faune/tour/bain + combinaisons de relief.;Scénarios=124416;ReliefCombos=96;Destinations=84
+Destination;WinsTop1
+DOLOMITES (undefined);19420
+COSTA RICA (undefined);13977
+KAMTCHATKA (undefined);12085
+SRI LANKA (undefined);11019
+TASMANIE (undefined);10995
+OUEST CANADIEN (undefined);8881
+HAWAI (undefined);6577
+AFRIQUE DU SUD (undefined);4067
+ACORES (undefined);4052
+ALASKA (undefined);3904
+MADAGASCAR (undefined);3083
+LA REUNION (undefined);2859
+CORSE (undefined);2631
+PATAGONIE (undefined);2099
+ISLANDE (undefined);1470
+JAPON (undefined);1464
+POLYNESIE (undefined);1369
+(vide);1296
+MADERE (undefined);808
+BRESIL (undefined);679
+LANZAROTE (undefined);669
+NOUVELLE ZELANDE (undefined);661
+TENERIFE (undefined);627
+PEROU (undefined);619
+NICARAGUA (undefined);546
+INDONESIE (undefined);536
+NOUVELLE ANGLETERRE (undefined);449
+ÎLES COOK (undefined);448
+NORDESTE (undefined);387
+COTE AMALFITAINE (undefined);372
+IRLANDE (undefined);361
+ANTARCTIQUE (undefined);358
+JORDANIE (undefined);347
+PAPOUASIE NOUVELLE GUINEE (undefined);346
+GRANDE RIO & COSTA VERDE (undefined);338
+RIVIERA MAYA (undefined);277
+NOUVELLE CALÉDONIE (undefined);268
+NAMIBIE (undefined);266
+CAP-VERT (undefined);266
+KENYA (undefined);253
+TANZANIE (undefined);223
+OUEST AUSTRALIEN (undefined);218
+BORA BORA (undefined);174
+MALDIVES (undefined);168
+TAIWAN (undefined);166
+ILES GALAPAGOS (undefined);154
+EQUATEUR (undefined);154
+PALAOS (undefined);150
+EGYPTE (undefined);118
+BALI (undefined);114
+SEYCHELLES (undefined);114
+PAYS BASQUE (undefined);106
+CHILI (undefined);105
+DOMINIQUE (undefined);96
+CYCLADES (undefined);94
+SAINT-HELENE (undefined);90
+OMAN (undefined);90
+GROENLAND (undefined);81
+RAJA AMPAT (undefined);77
+VANUATU (undefined);70
+NORD OUEST ESPAGNOL (undefined);64
+ARABIE SAOUDITE (undefined);59
+SICILE (undefined);58
+LA PALMA (undefined);57
+SAMOA (undefined);54
+COLOMBIE (undefined);54
+SAINT-VINCENT-ET-LES-GRENADINES (undefined);40
+TURQUIE (undefined);40
+FINLANDE (undefined);38
+MOZAMBIQUE (undefined);37
+CALABRE (undefined);32
+GUADELOUPE (undefined);30
+CRETE (undefined);28
+GRECE CONTINENTALE (undefined);22
+MONTENEGRO (undefined);20
+THAILANDE (undefined);18
+TIMOR OCCIDENTAL (undefined);16
+MEXIQUE (undefined);16
+EST AUSTRALIEN (undefined);14
+TOGO (undefined);12
+GRANDE CANARIE (undefined);6
+PALAWAN (undefined);4
+LA GOMERA (undefined);4
+LOMBOK (undefined);2

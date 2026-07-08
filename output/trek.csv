@@ -1,0 +1,66 @@
+DESCRIPTION;Classement des destinations par nb de victoires (top1) en utilisant calculateResults (trek+rando+faune+bain)*secu.;Scénarios=7776;Destinations=64
+Destination;WinsTop1
+NEPAL (undefined);1164
+KENYA (undefined);814
+PEROU (undefined);688
+TANZANIE (undefined);587
+AFRIQUE DU SUD (undefined);567
+ZAMBIE (undefined);487
+ISLANDE (undefined);344
+INDONESIE (undefined);309
+OMAN (undefined);258
+PATAGONIE (undefined);210
+NORVEGE (undefined);199
+COSTA RICA (undefined);184
+RIVIERA MAYA (undefined);145
+ETHIOPIE (undefined);138
+POLYNESIE (undefined);120
+CORSE (undefined);113
+PHILIPPINES (undefined);103
+BHOUTAN (undefined);93
+BALI (undefined);87
+GEORGIE (undefined);74
+OUEST AMERICAIN (undefined);61
+VENEZUELA (undefined);59
+ALPES (undefined);59
+OUGANDA (undefined);57
+KOMODO / FLORES OUEST (undefined);45
+JAPON (undefined);44
+SLOVENIE (undefined);43
+TASMANIE (undefined);42
+OUEST AUSTRALIEN (undefined);37
+TURQUIE (undefined);37
+KIRGHIZISTAN (undefined);37
+(vide);36
+BELIZE (undefined);33
+BRUNEI (undefined);33
+RAJA AMPAT (undefined);32
+OUEST CANADIEN (undefined);32
+BOLIVIE (undefined);29
+PALAWAN (undefined);28
+AUSTRALIE (undefined);28
+ZIMBABWE (undefined);26
+NORD AUSTRALIEN (undefined);26
+NOUVELLE ZELANDE (undefined);25
+MEXIQUE (undefined);22
+BORNEO MALAISIEN (undefined);21
+ILES GALAPAGOS (undefined);20
+CRETE (undefined);19
+SUMATRA (undefined);18
+BOTSWANA (undefined);17
+SAMOA (undefined);16
+RWANDA (undefined);15
+HAWAI (undefined);12
+PALAOS (undefined);10
+NICARAGUA (undefined);10
+BIRMANIE (undefined);10
+TEXAS (undefined);9
+MADAGASCAR (undefined);9
+NORDESTE (undefined);8
+MALAWI (undefined);8
+VANUATU (undefined);7
+BORNEO INDONESIEN (undefined);4
+SUISSE (undefined);3
+INDE (undefined);2
+AMAZONIE (undefined);2
+TENERIFE (undefined);1

@@ -1,0 +1,54 @@
+DESCRIPTION;Classement des destinations par nb de victoires (top1) en utilisant calculateResults, en bouclant rando/faune/inso/tour/secu (trek=0, bain=0 fixés).;Scénarios=7776;Destinations=52
+Destination;WinsTop1
+Yucatán (MEXIQUE);1203
+BAHAMAS (BAHAMAS);1148
+Thaïlande (Thaïlande);517
+MALDIVES (LES MALDIVES);477
+FIDJI (FIDJI);383
+Polynésie (Polynésie);337
+GRANDE RIO & COSTA VERDE (BRÉSIL);309
+NORD AUSTRALIEN (AUSTRALIE);296
+MAJORQUE (ESPAGNE);263
+VENEZUELA (VENEZUELA);260
+MAURICE (MAURICE);241
+IBIZA (ESPAGNE);225
+PHILIPPINES (PHILIPPINES);215
+Saint-Barthélemy (Saint-Barthélemy);208
+BALI (BALI);169
+Jamaïque (Jamaïque);124
+RAJA AMPAT (INDONÉSIE);109
+EST AUSTRALIEN (AUSTRALIE);109
+ZANZIBAR (ZANZIBAR);102
+Côte d'Azur (FRANCE);86
+TANZANIE (TANZANIE);82
+NORDESTE (BRÉSIL);71
+MYKONOS (GRECE);69
+ZANTE (GRECE);66
+TENERIFE (ESPAGNE);58
+ANTIGUA (ANTIGUA);54
+INDE (INDE);53
+République dominicaine (République dominicaine);47
+CHYPRE (CHYPRE);45
+AUSTRALIE (AUSTRALIE);43
+îles caïmans (îles caïmans);41
+Cap-Vert (Cap‑Vert);37
+(vide);36
+BARBADE (BARBADE);32
+SOCOTRA (YEMEN);30
+Îles Vierges britanniques (Îles Vierges britanniques);29
+hawaï (ETATS-UNIS);25
+SARDAIGNE (ITALIE);25
+CROATIE (CROATIE);22
+Turks and Caicos (Turks and Caicos);19
+SANTORIN (#N/A);16
+MEXIQUE (MEXIQUE);14
+PORTO RICO (PORTO RICO);13
+SICILE (ITALIE);12
+Indonésie (Indonésie);10
+FLORIDE (ETATS-UNIS);9
+KOMODO / FLORES OUEST (INDONÉSIE);7
+MALTE (MALTE);7
+BORA BORA (POLYNÉSIE FRANÇAISE);6
+Nouvelle-Calédonie (Nouvelle-Calédonie);6
+GRANDE CANARIE (ESPAGNE);6
+égypte (égypte);5

@@ -1,0 +1,204 @@
+.themes2-bg {
+  padding: 8px 16px;
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+
+  background-image: url("/choix2.png");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+
+  margin: 0 auto;
+}
+
+.themes2-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.themes2-bg > * {
+  position: relative;
+  z-index: 1;
+}
+
+.ville-grid-screen {
+  width: 100%;
+  max-width: 760px;
+  margin-top: 28px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 👈 FIX */
+  gap: 10px;
+}
+
+.card {
+  border-radius: 18px;
+  padding: 10px;
+  text-align: center;
+
+  /* 🔥 IMPORTANT */
+  background: rgba(255, 255, 255, 0.08); /* base neutre */
+
+    backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+
+  border: 1px solid rgba(255,255,255,0.25);
+
+  background-clip: padding-box;
+
+  color: white;
+
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+}
+
+.card-stars {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.emoji {
+  font-size: 30px;
+  line-height: 1;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 1000;
+  line-height: 1.2;
+
+  text-align: center;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 3; /* 👈 max 2 lignes */
+  -webkit-box-orient: vertical;
+  color: #111; /* 🔥 texte noir */
+  overflow: hidden;
+  word-break: break-word;
+}
+
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 25px;
+}
+
+.card .star {
+  font-size: 22px;
+  line-height: 1;
+
+  margin: 0 2px; /* 👈 LA solution fiable */
+  padding: 0;
+  display: inline-block;
+
+  transform: scale(1.05);
+  transition: transform 0.15s ease;
+
+  /* ❌ SUPPRIME ÇA */
+  /* letter-spacing: -2px; */
+}
+
+.card .star-rating {
+  display: flex; /* 👈 plus stable que inline-flex */
+  justify-content: center;
+  align-items: center;
+
+  gap: 4px; /* 👈 ajuste ici */
+}
+
+.card .star.active {
+  filter: drop-shadow(0 0 4px rgba(255,255,255,0.8));
+}
+.card .star:hover {
+  transform: scale(1.2);
+}
+
+.sub-option {
+  margin-top: 6px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 6px; /* espace entre étoile et texte */
+}
+
+.sub-option-label {
+  font-size: 11px;
+  font-weight: 700;
+
+  color: #111; /* 🔥 texte noir */
+
+  line-height: 1.1;
+  text-align: left;
+}
+.sub-option-label.duo-label {
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.05;
+  text-align: center;
+}
+
+.attrac-star svg,
+.attrac-star span {
+  font-size: 32px; /* ou 40px */
+}
+
+.blinking-attrac-star .star {
+  display: inline-block;
+  transform-origin: center;
+}
+
+/* ⭐ NON sélectionnée */
+.blinking-attrac-star .star:not(.active) {
+  color: #3a3434 !important;
+
+  animation: attracBlinkIdle 1.2s infinite ease-in-out;
+}
+
+/* ⭐ sélectionnée */
+.blinking-attrac-star .star.active {
+  color: #ffd700 !important;
+
+  animation: none !important;
+
+  transform: scale(1.35);
+
+  filter: drop-shadow(0 0 10px #ffd700);
+}
+
+@keyframes attracBlinkIdle {
+  0%, 100% {
+    opacity: 0.45;
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 0px rgba(255,255,255,0));
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.45);
+    filter: drop-shadow(0 0 8px rgba(255,255,255,0.55));
+  }
+}
+

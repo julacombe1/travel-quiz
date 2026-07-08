@@ -1,13 +1,19 @@
+import startImage from "../assets/commencer-le-quizz.png"
 function StartScreen({ onStart }) {
   return (
-    <div
-      className="screen"
-      style={{ backgroundImage: "url('/src/assets/adventure-farniente.png')" }}
-    >
-      <button className="start-btn" onClick={onStart}>
-        Commencer le quiz
-      </button>
-    </div>
+<div className="image-wrapper">
+
+  <img
+    src={startImage}
+    alt="Commencer le quiz"
+    className="start-image"
+  />
+
+  <button className="start-quiz-btn" onClick={onStart}>
+    COMMENCER<br />LE QUIZZ
+  </button>
+
+</div>
   )
 }
 

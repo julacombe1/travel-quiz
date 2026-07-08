@@ -1,0 +1,82 @@
+DESCRIPTION;Classement des destinations par nb de victoires (top1) en utilisant calculateResults, en bouclant rando/faune/inso/tour/secu (trek=0, bain=0 fixés).;Scénarios=7776;Destinations=80
+Destination;WinsTop1
+COSTA RICA (undefined);662
+ISLANDE (undefined);577
+KOMODO / FLORES OUEST (undefined);448
+ZAMBIE (undefined);412
+POLYNESIE (undefined);406
+PHILIPPINES (undefined);388
+AFRIQUE DU SUD (undefined);356
+NICARAGUA (undefined);266
+INDONESIE (undefined);226
+NORDESTE (undefined);220
+ALASKA (undefined);205
+RIVIERA MAYA (undefined);198
+RAJA AMPAT (undefined);171
+TANZANIE (undefined);142
+JAPON (undefined);139
+BIRMANIE (undefined);133
+NORVEGE (undefined);129
+OUEST AUSTRALIEN (undefined);123
+NAMIBIE (undefined);122
+INDE (undefined);121
+MADAGASCAR (undefined);118
+NEPAL (undefined);114
+OUEST AMERICAIN (undefined);109
+PEROU (undefined);107
+RWANDA (undefined);93
+NORD AUSTRALIEN (undefined);92
+CALIFORNIE (undefined);92
+KENYA (undefined);88
+NOUVELLE CALÉDONIE (undefined);83
+ÎLES ANDAMAN & NICOBAR (undefined);74
+LA REUNION (undefined);72
+BRUNEI (undefined);70
+QUEBEC (undefined);70
+PALAWAN (undefined);69
+CRETE (undefined);66
+VANUATU (undefined);61
+VENEZUELA (undefined);55
+SUMATRA (undefined);55
+BORNEO MALAISIEN (undefined);53
+BOLIVIE (undefined);51
+TURQUIE (undefined);46
+SICILE (undefined);45
+GEORGIE (undefined);43
+MALAWI (undefined);41
+LOFOTEN (undefined);39
+ILES GALAPAGOS (undefined);38
+(vide);36
+ZIMBABWE (undefined);34
+PAKISTAN (undefined);34
+PATAGONIE (undefined);29
+KIRGHIZISTAN (undefined);27
+MEXIQUE (undefined);26
+ETHIOPIE (undefined);25
+ÎLES COOK (undefined);24
+BELIZE (undefined);20
+ACORES (undefined);20
+MADERE (undefined);19
+GROENLAND (undefined);16
+ARGENTINE (undefined);16
+SAMOA (undefined);15
+KAMTCHATKA (undefined);13
+NOUVELLE ZELANDE (undefined);12
+AUSTRALIE (undefined);12
+BOTSWANA (undefined);10
+TEXAS (undefined);9
+OUEST CANADIEN (undefined);9
+MOZAMBIQUE (undefined);9
+EL HIERRO (undefined);8
+LANZAROTE (undefined);8
+TENERIFE (undefined);8
+DOLOMITES (undefined);7
+BORNEO INDONESIEN (undefined);6
+MAROC (undefined);6
+MONTENEGRO (undefined);6
+SUISSE (undefined);6
+PALAOS (undefined);5
+TASMANIE (undefined);5
+JORDANIE (undefined);4
+AMAZONIE (undefined);2
+OUGANDA (undefined);2

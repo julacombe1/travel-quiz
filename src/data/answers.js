@@ -1,10 +1,12 @@
 const answers = {
-  adventurer: { aventure: 5, farniente: 0 },
-  relax: { aventure: 0, farniente: 5 },
-  both: { aventure: 3, farniente: 3 },
-  moreAdventure: { aventure: 4, farniente: 2 },
-  moreRelax: { aventure: 2, farniente: 4 },
-  none: { aventure: 0, farniente: 0 }
+  fullAventure: { aventure: 7 },
+  aventure: { aventure: 6 },
+  farniente: { aventure: 2 },
+  mixte: { aventure: 4 },
+  plusAventure: { aventure: 5 },
+  plusFarniente: { aventure: 3 },
+  fullFarniente: { aventure: 1 },
+  aucundesdeux: { aventure: 0 }
 }
 
 export default answers
