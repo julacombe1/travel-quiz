@@ -371,7 +371,8 @@ const handleTripInterest = (payload = {}) => {
 
     emailContext: buildEmailContext(),
 
-    results,
+    // Important :
+    // on n'envoie plus "results", car cela peut contenir tout le classement.
   });
 
   goTo("contact");

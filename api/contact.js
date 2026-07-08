@@ -105,10 +105,14 @@ function buildEmailHtml(payload, orderId) {
         <li><strong>Total :</strong> ${escapeHtml(formatMoney(budgetBreakdown.total))}</li>
       </ul>
 
-      <h2>Données complètes reçues</h2>
-      <pre style="white-space:pre-wrap; background:#f7f1fb; padding:14px; border-radius:12px;">
-${escapeHtml(JSON.stringify(payload, null, 2))}
-      </pre>
+<h2>Résumé de la demande</h2>
+<ul>
+  <li><strong>Mode :</strong> ${escapeHtml(request?.mode || "Non renseigné")}</li>
+  <li><strong>Destination :</strong> ${escapeHtml(destinationName)}</li>
+  <li><strong>Voyageurs :</strong> ${escapeHtml(userAnswers.travelers || "Non renseigné")}</li>
+  <li><strong>Durée :</strong> ${escapeHtml(userAnswers.tripDays || "Non renseigné")} jours</li>
+  <li><strong>Budget utilisateur :</strong> ${escapeHtml(formatMoney(userAnswers.budgetTotal))}</li>
+</ul>
     </div>
   `;
 }
