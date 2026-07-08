@@ -284,28 +284,18 @@ function getDestinationRankLabel(rank) {
 
   if (!Number.isFinite(number) || number <= 0) return "";
 
-  if (number === 1) return "1ère destination proposée par l’application";
+  if (number === 1) {
+    return "1ère destination proposée par l’application";
+  }
 
   return `${number}e destination proposée par l’application`;
 }
 
 function formatDestinationMeta(request) {
   if (request?.mode === "customDestination") {
-    return `<p style="margin-top:4px;"><strong>Destination renseignée manuellement par l’utilisateur</strong></p>`;
-  }
-
-  const rankLabel = getDestinationRankLabel(request?.destinationRank);
-
-  if (!rankLabel) return "";
-
-  return `<p style="margin-top:4px;"><strong>${escapeHtml(rankLabel)}</strong></p>`;
-}
-
-function formatDestinationMeta(request) {
-  if (request?.mode === "customDestination") {
     return `
-      <p>
-        <strong>Destination renseignée manuellement par l'utilisateur</strong>
+      <p style="margin-top:4px;">
+        <strong>Destination renseignée manuellement par l’utilisateur</strong>
       </p>
     `;
   }
@@ -315,7 +305,7 @@ function formatDestinationMeta(request) {
   if (!rankLabel) return "";
 
   return `
-    <p>
+    <p style="margin-top:4px;">
       <strong>${escapeHtml(rankLabel)}</strong>
     </p>
   `;
