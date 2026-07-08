@@ -284,11 +284,33 @@ function getDestinationRankLabel(rank) {
 
   if (!Number.isFinite(number) || number <= 0) return "";
 
-  if (number === 1) {
-    return "1ère destination proposée par l’application";
-  }
+  if (number === 1) return "1ère destination proposée par l’application";
 
   return `${number}e destination proposée par l’application`;
+}
+
+function formatDestinationBlock(request, destinationName) {
+  if (request?.mode === "customDestination") {
+    return `
+      <div class="destination-block">
+        <div class="destination-name">${escapeHtml(destinationName)}</div>
+        <div class="destination-meta">Destination renseignée manuellement par l’utilisateur</div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="destination-block">
+      <div class="destination-name">${escapeHtml(destinationName)}</div>
+      ${
+        getDestinationRankLabel(request?.destinationRank)
+          ? `<div class="destination-meta">${escapeHtml(
+              getDestinationRankLabel(request.destinationRank)
+            )}</div>`
+          : ""
+      }
+    </div>
+  `;
 }
 
 function formatDestinationMeta(request) {
@@ -310,117 +332,143 @@ function formatDestinationMeta(request) {
     </p>
   `;
 }
-
-const THEME_LABELS = [
-  { key: "trek", label: "Trek", max: 5 },
-  { key: "rando", label: "Randonnée", max: 5 },
-  { key: "faune", label: "Faune", max: 5 },
-  { key: "bain", label: "Baignade", max: 5 },
-  { key: "inso", label: "Baignade insolite", max: 5 },
-  { key: "mer", label: "Baignade mer", max: 5 },
-  { key: "secu", label: "Sécurité", max: 5 },
-  { key: "bala", label: "Balade", max: 5 },
-  { key: "nature", label: "Nature", max: 5 },
-  { key: "infra", label: "All Inclusive", max: 5 },
-  { key: "fete", label: "Animation, Club, Bar", max: 5 },
-  { key: "chal", label: "Chaleur", max: 5 },
-
-  { key: "histo", label: "Monument historique", max: 3 },
-  { key: "reli", label: "Monument religieux", max: 3 },
-  { key: "musees", label: "Musée", max: 3 },
-  { key: "arch", label: "Site archéologique", max: 3 },
-  { key: "shop", label: "Shopping", max: 3 },
-  { key: "moder", label: "Ville moderne", max: 3 },
-  { key: "spec", label: "Spectacle", max: 3 },
-  { key: "noctu", label: "Nocturne", max: 3 },
-  { key: "quar", label: "Quartier atypique", max: 3 },
-  { key: "streetart", label: "Street Art", max: 3 },
-  { key: "soin", label: "Bien-être", max: 3 },
-  { key: "massage", label: "Massage", max: 3 },
-  { key: "attrac", label: "Parc d'attractions", max: 3 },
-  { key: "attracsens", label: "Parc à sensations", max: 3 },
-  { key: "zoo", label: "Zoo", max: 3 },
-  { key: "aqua", label: "Aquarium", max: 3 },
-  { key: "carna", label: "Fête locale", max: 3 },
-  { key: "festi", label: "Festival de musique", max: 3 },
-
-  { key: "monu", label: "Monument", max: 3 },
-  { key: "snork", label: "Snorkeling", max: 3 },
-  { key: "plongee", label: "Plongée", max: 3 },
-  { key: "visite", label: "Visite", max: 3 },
-  { key: "planta", label: "Plantation", max: 3 },
-  { key: "velo", label: "Vélo", max: 3 },
-  { key: "cyclisme", label: "Cyclisme", max: 3 },
-  { key: "canoe", label: "Canoë / Kayak", max: 3 },
-  { key: "rafting", label: "Rafting", max: 3 },
-  { key: "canyon", label: "Canyoning", max: 3 },
-  { key: "accro", label: "Accrobranche", max: 3 },
-  { key: "viaferrata", label: "Via Ferrata", max: 3 },
-  { key: "motor", label: "Quad / Buggy", max: 3 },
-  { key: "jetski", label: "Jet-ski", max: 3 },
-  { key: "bateau", label: "Bateau", max: 3 },
-  { key: "surf", label: "Surf", max: 3 },
-  { key: "grot", label: "Grottes", max: 3 },
-  { key: "speleo", label: "Spéléologie", max: 3 },
-  { key: "aerien", label: "Évasion aérienne", max: 3 },
-  { key: "extreme", label: "Frissons aériens", max: 3 },
-  { key: "esca", label: "Escalade", max: 3 },
-
-  { key: "streetfood", label: "Street Food", max: 3 },
-  { key: "stvege", label: "Street Food végé", max: 3 },
-  { key: "cuisineloc", label: "Cuisine locale", max: 3 },
-  { key: "cuivege", label: "Cuisine locale végé", max: 3 },
-  { key: "gastro", label: "Restaurant gastronomique", max: 3 },
-  { key: "gasvege", label: "Gastronomique végé", max: 3 },
-  { key: "alcool", label: "Alcool local / bière", max: 3 },
-  { key: "vin", label: "Vin", max: 3 },
-  { key: "doux", label: "Doux", max: 3 },
-  { key: "epice", label: "Pimenté", max: 3 },
-  { key: "atelcul", label: "Atelier de cuisine", max: 3 },
-
-  { key: "confort", label: "Confort", max: 3 },
-  { key: "luxe", label: "Luxe", max: 3 },
-  { key: "popu", label: "Accueil population locale", max: 3 },
-  { key: "camp", label: "Camping", max: 3 },
-  { key: "sauvage", label: "Camping sauvage", max: 3 },
-  { key: "jacuz", label: "Jacuzzi", max: 3 },
-  { key: "pisci", label: "Piscine", max: 3 },
-  { key: "roman", label: "Romantique", max: 3 },
-  { key: "coquin", label: "Coquin", max: 3 },
-  { key: "atyp", label: "Atypique", max: 3 },
-  { key: "eco", label: "Eco-tourisme", max: 3 },
+const THEMES_GROUPS = [
+  {
+    title: "Thèmes 1",
+    items: [
+      { key: "trek", label: "Trek", max: 5 },
+      { key: "rando", label: "Randonnée", max: 5 },
+      { key: "faune", label: "Faune", max: 5 },
+      { key: "bain", label: "Baignade", max: 5 },
+      { key: "inso", label: "Baignade insolite", max: 5 },
+      { key: "mer", label: "Baignade mer", max: 5 },
+      { key: "bala", label: "Balade", max: 5 },
+      { key: "nature", label: "Nature", max: 5 },
+      { key: "infra", label: "All Inclusive", max: 5 },
+      { key: "fete", label: "Animation, Club, Bar", max: 5 },
+    ],
+  },
+  {
+    title: "Thèmes 2 — Ville",
+    items: [
+      { key: "histo", label: "Monument historique", max: 3 },
+      { key: "reli", label: "Monument religieux", max: 3 },
+      { key: "musees", label: "Musée", max: 3 },
+      { key: "arch", label: "Site archéologique", max: 3 },
+      { key: "monu", label: "Monument", max: 3 },
+      { key: "shop", label: "Shopping", max: 3 },
+      { key: "moder", label: "Ville moderne", max: 3 },
+      { key: "spec", label: "Spectacle", max: 3 },
+      { key: "noctu", label: "Nocturne", max: 3 },
+      { key: "quar", label: "Quartier atypique", max: 3 },
+      { key: "streetart", label: "Street Art", max: 3 },
+      { key: "soin", label: "Bien-être", max: 3 },
+      { key: "massage", label: "Massage", max: 3 },
+      { key: "carna", label: "Fête locale", max: 3 },
+      { key: "festi", label: "Festival de musique", max: 3 },
+      { key: "attrac", label: "Parc d’attractions", max: 3 },
+      { key: "attracsens", label: "Parc à sensations", max: 3 },
+      { key: "zoo", label: "Zoo", max: 3 },
+      { key: "aqua", label: "Aquarium", max: 3 },
+    ],
+  },
+  {
+    title: "Thèmes 2 — Activités",
+    items: [
+      { key: "snork", label: "Snorkeling", max: 3 },
+      { key: "plongee", label: "Plongée", max: 3 },
+      { key: "visite", label: "Visite", max: 3 },
+      { key: "planta", label: "Plantation", max: 3 },
+      { key: "velo", label: "Vélo", max: 3 },
+      { key: "cyclisme", label: "Cyclisme", max: 3 },
+      { key: "canoe", label: "Canoë / Kayak", max: 3 },
+      { key: "rafting", label: "Rafting", max: 3 },
+      { key: "canyon", label: "Canyoning", max: 3 },
+      { key: "accro", label: "Accrobranche", max: 3 },
+      { key: "viaferrata", label: "Via Ferrata", max: 3 },
+      { key: "motor", label: "Quad / Buggy", max: 3 },
+      { key: "jetski", label: "Jet-ski", max: 3 },
+      { key: "bateau", label: "Bateau", max: 3 },
+      { key: "surf", label: "Surf", max: 3 },
+      { key: "grot", label: "Grottes", max: 3 },
+      { key: "speleo", label: "Spéléologie", max: 3 },
+      { key: "aerien", label: "Évasion aérienne", max: 3 },
+      { key: "extreme", label: "Frissons aériens", max: 3 },
+      { key: "esca", label: "Escalade", max: 3 },
+    ],
+  },
+  {
+    title: "Thèmes 3 — Nourriture",
+    items: [
+      { key: "streetfood", label: "Street Food", max: 3 },
+      { key: "stvege", label: "Street Food végé", max: 3 },
+      { key: "cuisineloc", label: "Cuisine locale", max: 3 },
+      { key: "cuivege", label: "Cuisine locale végé", max: 3 },
+      { key: "gastro", label: "Restaurant gastronomique", max: 3 },
+      { key: "gasvege", label: "Gastronomique végé", max: 3 },
+      { key: "alcool", label: "Alcool local / bière", max: 3 },
+      { key: "vin", label: "Vin", max: 3 },
+      { key: "doux", label: "Doux", max: 3 },
+      { key: "epice", label: "Pimenté", max: 3 },
+      { key: "atelcul", label: "Atelier de cuisine", max: 3 },
+    ],
+  },
+  {
+    title: "Thèmes 3 — Logement",
+    items: [
+      { key: "confort", label: "Confort", max: 3 },
+      { key: "luxe", label: "Luxe", max: 3 },
+      { key: "popu", label: "Accueil population locale", max: 3 },
+      { key: "camp", label: "Camping", max: 3 },
+      { key: "sauvage", label: "Camping sauvage", max: 3 },
+      { key: "jacuz", label: "Jacuzzi", max: 3 },
+      { key: "pisci", label: "Piscine", max: 3 },
+      { key: "roman", label: "Romantique", max: 3 },
+      { key: "coquin", label: "Coquin", max: 3 },
+      { key: "atyp", label: "Atypique", max: 3 },
+      { key: "eco", label: "Eco-tourisme", max: 3 },
+    ],
+  },
 ];
 
-function formatActivatedThemes(userAnswers = {}) {
-  const rows = THEME_LABELS
+function formatThemeGroup(group, userAnswers = {}) {
+  const rows = group.items
     .map((theme) => {
       const score = Number(userAnswers?.[theme.key]);
 
-      if (!Number.isFinite(score) || score <= 0) {
-        return null;
-      }
+      if (!Number.isFinite(score) || score <= 0) return null;
 
       return `
-        <li>
-          <strong>${escapeHtml(theme.label)} :</strong>
-          ${escapeHtml(score)}/${escapeHtml(theme.max)}
-        </li>
+        <tr>
+          <td class="mini-label">${escapeHtml(theme.label)}</td>
+          <td class="mini-value">${escapeHtml(score)}/${escapeHtml(theme.max)}</td>
+        </tr>
       `;
     })
     .filter(Boolean);
 
-  if (!rows.length) {
-    return "";
-  }
+  if (!rows.length) return "";
 
   return `
-    <h2>Thèmes activés par l'utilisateur</h2>
-    <ul>
+    <h3 class="subsection-title">${escapeHtml(group.title)}</h3>
+    <table class="mini-table">
       ${rows.join("")}
-    </ul>
+    </table>
   `;
 }
 
+function formatGroupedThemes(userAnswers = {}) {
+  const html = THEMES_GROUPS
+    .map((group) => formatThemeGroup(group, userAnswers))
+    .join("");
+
+  if (!html.trim()) return "";
+
+  return `
+    <h2 class="section-title">Thèmes activés</h2>
+    ${html}
+  `;
+}
 const COMMENT_CONFIG = [
   { key: "trek", label: "Trek", icon: "🧗" },
   { key: "rando", label: "Randonnée", icon: "🥾" },
@@ -668,10 +716,104 @@ function getMonthLabel(monthKey) {
     octobre: "Octobre",
     novembre: "Novembre",
     decembre: "Décembre",
-    best: "Meilleur mois calculé automatiquement",
+    best: "Meilleur mois demandé automatiquement",
   };
 
   return months[monthKey] || monthKey || "";
+}
+
+function formatDateFr(value) {
+  if (!value) return "";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+
+  return date.toLocaleDateString("fr-FR");
+}
+
+function getTravelPeriodLabel(userAnswers = {}) {
+  const exactDates = userAnswers.exactDates;
+
+  if (exactDates?.from || exactDates?.to) {
+    return `${formatDateFr(exactDates.from) || "?"} → ${
+      formatDateFr(exactDates.to) || "?"
+    }`;
+  }
+
+  if (userAnswers.selectedMonth === "best") {
+    return "Meilleur mois demandé automatiquement";
+  }
+
+  if (userAnswers.selectedMonth) {
+    return getMonthLabel(userAnswers.selectedMonth);
+  }
+
+  return "";
+}
+
+function getBudgetValue(budgetBreakdown, keys = []) {
+  for (const key of keys) {
+    const value = budgetBreakdown?.[key];
+
+    if (value !== undefined && value !== null && value !== "") {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+function formatSummaryTable(userAnswers = {}, budgetBreakdown = {}) {
+  const estimatedBudget = getBudgetValue(budgetBreakdown, ["total"]);
+
+  return `
+    <h2 class="section-title">Résumé du voyage</h2>
+
+    <table class="summary-grid">
+      <tr>
+        <td class="summary-cell">
+          <div class="summary-label">Voyageurs</div>
+          <div class="summary-value">${escapeHtml(userAnswers.travelers || "")}</div>
+        </td>
+
+        <td class="summary-cell">
+          <div class="summary-label">Durée</div>
+          <div class="summary-value">${escapeHtml(userAnswers.tripDays || "")} jours</div>
+        </td>
+
+        <td class="summary-cell">
+          <div class="summary-label">Période</div>
+          <div class="summary-value small">${escapeHtml(getTravelPeriodLabel(userAnswers))}</div>
+        </td>
+
+        <td class="summary-cell">
+          <div class="summary-label">Budget renseigné</div>
+          <div class="summary-value">${escapeHtml(formatMoney(userAnswers.budgetTotal))}</div>
+        </td>
+
+        <td class="summary-cell">
+          <div class="summary-label">Budget estimé</div>
+          <div class="summary-value">${escapeHtml(formatMoney(estimatedBudget))}</div>
+        </td>
+      </tr>
+    </table>
+
+    ${
+      userAnswers.usedFinalBudgetRelaunch === true
+        ? `
+          <table class="mini-table">
+            <tr>
+              <td class="mini-label">Relance budget</td>
+              <td class="mini-value">Utilisée depuis l’écran résultat</td>
+            </tr>
+          </table>
+        `
+        : ""
+    }
+  `;
 }
 
 function formatDateFr(value) {
@@ -773,6 +915,250 @@ function formatTemperaturePreferences(userAnswers = {}) {
     .join("");
 }
 
+function getContactModeLabel(mode) {
+  const labels = {
+    phone: "Téléphone",
+    whatsapp: "WhatsApp",
+    email: "Email",
+  };
+
+  return labels[mode] || mode || "";
+}
+
+function hasValue(value) {
+  if (value === null || value === undefined) return false;
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === "string") return value.trim() !== "";
+  return true;
+}
+
+function compactRow(label, value) {
+  if (!hasValue(value)) return "";
+
+  const displayValue = Array.isArray(value) ? value.join(", ") : value;
+
+  return `
+    <tr>
+      <td class="mini-label">${escapeHtml(label)}</td>
+      <td class="mini-value">${escapeHtml(displayValue)}</td>
+    </tr>
+  `;
+}
+
+function formatContactTable(contact = {}) {
+  const rows = [
+    compactRow("Mode de contact", getContactModeLabel(contact.contactMode)),
+    compactRow("Prénom", contact.firstName),
+    compactRow("Nom", contact.lastName),
+    compactRow("Téléphone", contact.phone),
+    compactRow("WhatsApp", contact.whatsapp),
+    compactRow("Email", contact.email),
+    compactRow("Jours préférés", contact.preferredDays),
+    compactRow("Plage horaire préférée", contact.preferredTimeSlot),
+    compactRow("Commentaire", contact.comment),
+  ].join("");
+
+  if (!rows.trim()) return "";
+
+  return `
+    <h2 class="section-title">Coordonnées client</h2>
+    <table class="mini-table">
+      ${rows}
+    </table>
+  `;
+}
+
+function getReliefLabels(userAnswers = {}) {
+  const relief = userAnswers.relief || {};
+
+  const labels = {
+    vegetalise: "Végétalisé",
+    alpin: "Alpin",
+    cotier: "Côtier",
+    volcanique: "Volcanique",
+    tropical: "Tropical",
+    desertique: "Désertique",
+    foret: "Forêt",
+  };
+
+  return Object.entries(labels)
+    .filter(([key]) => relief[key] === true)
+    .map(([, label]) => label);
+}
+
+function formatRange(min, max, unit = "°C") {
+  const hasMin = min !== null && min !== undefined && min !== "";
+  const hasMax = max !== null && max !== undefined && max !== "";
+
+  if (!hasMin && !hasMax) return "";
+  if (hasMin && hasMax) return `${min}${unit} à ${max}${unit}`;
+  if (hasMin) return `${min}${unit} ou plus`;
+  return `jusqu’à ${max}${unit}`;
+}
+
+function formatClimateSecurityRelief(userAnswers = {}) {
+  const rows = [];
+
+  const reliefLabels = getReliefLabels(userAnswers);
+
+  if (reliefLabels.length) {
+    rows.push(["Relief souhaité", reliefLabels.join(", ")]);
+  }
+
+  if (Number(userAnswers.chal) > 0) {
+    const heatRange = formatRange(userAnswers.chalMin, userAnswers.chalMax);
+
+    rows.push([
+      "Chaleur",
+      heatRange ? `${userAnswers.chal}/5 — ${heatRange}` : `${userAnswers.chal}/5`,
+    ]);
+  }
+
+  if (Number(userAnswers.secu) > 0) {
+    rows.push(["Sécurité", `${userAnswers.secu}/5`]);
+  }
+
+  if (!rows.length) return "";
+
+  return `
+    <h2 class="section-title">Chaleur, sécurité et relief</h2>
+    <table class="mini-table">
+      ${rows
+        .map(
+          ([label, value]) => `
+            <tr>
+              <td class="mini-label">${escapeHtml(label)}</td>
+              <td class="mini-value">${escapeHtml(value)}</td>
+            </tr>
+          `
+        )
+        .join("")}
+    </table>
+  `;
+}
+
+function getMonthKeyForDestinationInfo(userAnswers = {}, request = {}) {
+  if (userAnswers.selectedMonth && userAnswers.selectedMonth !== "best") {
+    return userAnswers.selectedMonth;
+  }
+
+  if (userAnswers.exactDates?.from) {
+    const date = new Date(userAnswers.exactDates.from);
+
+    if (!Number.isNaN(date.getTime())) {
+      const monthKeys = [
+        "janvier",
+        "fevrier",
+        "mars",
+        "avril",
+        "mai",
+        "juin",
+        "juillet",
+        "aout",
+        "septembre",
+        "octobre",
+        "novembre",
+        "decembre",
+      ];
+
+      return monthKeys[date.getMonth()];
+    }
+  }
+
+  return (
+    request?.monthKey ||
+    request?.bestMonthKey ||
+    request?.destination?.bestMonthKey ||
+    request?.destination?.bestMonth ||
+    ""
+  );
+}
+
+function readMonthlyValue(destination = {}, possibleBases = [], monthKey) {
+  if (!monthKey) return null;
+
+  for (const base of possibleBases) {
+    if (destination?.[base]?.[monthKey] !== undefined) {
+      return destination[base][monthKey];
+    }
+
+    const possibleKeys = [
+      `${base}${monthKey}`,
+      `${base}_${monthKey}`,
+      `${base}.${monthKey}`,
+      `${base}${monthKey.charAt(0).toUpperCase()}${monthKey.slice(1)}`,
+    ];
+
+    for (const key of possibleKeys) {
+      if (destination?.[key] !== undefined) {
+        return destination[key];
+      }
+    }
+  }
+
+  return null;
+}
+
+function formatDestinationTemperatures({ request, userAnswers }) {
+  if (request?.mode === "customDestination") return "";
+
+  const destination = request?.destination || {};
+  const monthKey = getMonthKeyForDestinationInfo(userAnswers, request);
+
+  const rows = [];
+
+  const airTemp = readMonthlyValue(
+    destination,
+    ["temp", "temperature", "chal", "chaleur", "tempmoy", "temperatureMoy"],
+    monthKey
+  );
+
+  if (airTemp !== null && airTemp !== undefined && airTemp !== "") {
+    rows.push([
+      `Température destination (${getMonthLabel(monthKey)})`,
+      `${airTemp}°C`,
+    ]);
+  }
+
+  const waterTemp = readMonthlyValue(
+    destination,
+    ["teau", "eau", "merTemp", "temperatureEau", "tempEau"],
+    monthKey
+  );
+
+  if (
+    waterTemp !== null &&
+    waterTemp !== undefined &&
+    waterTemp !== "" &&
+    (Number(userAnswers.mer) > 0 ||
+      Number(userAnswers.bain) > 0 ||
+      Number(userAnswers.inso) > 0)
+  ) {
+    rows.push([
+      `Température de l’eau (${getMonthLabel(monthKey)})`,
+      `${waterTemp}°C`,
+    ]);
+  }
+
+  if (!rows.length) return "";
+
+  return `
+    <h3 class="subsection-title">Températures affichées</h3>
+    <table class="mini-table">
+      ${rows
+        .map(
+          ([label, value]) => `
+            <tr>
+              <td class="mini-label">${escapeHtml(label)}</td>
+              <td class="mini-value">${escapeHtml(value)}</td>
+            </tr>
+          `
+        )
+        .join("")}
+    </table>
+  `;
+}
+
 function buildEmailHtml(payload, orderId) {
   const { contact, request } = payload;
 
@@ -851,17 +1237,96 @@ const estimatedBudget = getBudgetValue(budgetBreakdown, ["total"]);
         li {
           margin-bottom: 4px;
         }
+          <style>
+  .section-title {
+    margin: 18px 0 8px;
+    font-size: 16px;
+    color: #3b284c;
+    border-bottom: 1px solid #eadcf4;
+    padding-bottom: 5px;
+  }
+
+  .subsection-title {
+    margin: 12px 0 5px;
+    font-size: 14px;
+    color: #6c3b85;
+  }
+
+  .destination-block {
+    margin: 10px 0 14px;
+    padding: 14px;
+    border-radius: 14px;
+    background: #f9eefc;
+  }
+
+  .destination-name {
+    font-size: 24px;
+    font-weight: 900;
+    color: #d94b8c;
+  }
+
+  .destination-meta {
+    margin-top: 4px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #6c5b75;
+  }
+
+  .summary-grid {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 6px;
+    margin: 6px 0 10px;
+  }
+
+  .summary-cell {
+    background: #f9eefc;
+    border-radius: 12px;
+    padding: 9px;
+    vertical-align: top;
+    width: 20%;
+  }
+
+  .summary-label {
+    font-size: 11px;
+    color: #7a5b8d;
+    margin-bottom: 4px;
+  }
+
+  .summary-value {
+    font-size: 17px;
+    font-weight: 900;
+    color: #2f2440;
+  }
+
+  .summary-value.small {
+    font-size: 13px;
+    line-height: 1.25;
+  }
+
+  .mini-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 4px;
+  }
+
+  .mini-label {
+    width: 42%;
+    padding: 6px 7px;
+    border-bottom: 1px solid #eee;
+    color: #6c5b75;
+    font-size: 12px;
+  }
+
+  .mini-value {
+    padding: 6px 7px;
+    border-bottom: 1px solid #eee;
+    font-weight: 700;
+    font-size: 12px;
+  }
+</style>
       </style>
-<h2>Coordonnées client</h2>
-${infoLine("Mode de contact", getContactModeLabel(contact.contactMode))}
-${infoLine("Prénom", contact.firstName)}
-${infoLine("Nom", contact.lastName)}
-${infoLine("Téléphone", contact.phone)}
-${infoLine("WhatsApp", contact.whatsapp)}
-${infoLine("Email", contact.email)}
-${infoLine("Jours préférés", contact.preferredDays)}
-${infoLine("Plage horaire", contact.preferredTimeSlot)}
-${infoLine("Commentaire", contact.comment)}
+${formatContactTable(contact)}
 
       <h2 class="section-title">Destination</h2>
 
@@ -870,65 +1335,19 @@ ${infoLine("Commentaire", contact.comment)}
       </p>
 
       ${formatDestinationMeta(request)}
+${formatDestinationBlock(request, destinationName)}
+${formatSummaryTable(userAnswers, budgetBreakdown)}
 
-<h2>Résumé du voyage</h2>
 
-      <table class="summary-grid">
-        <tr>
-          <td class="summary-cell">
-            <div class="summary-label">Voyageurs</div>
-            <div class="summary-value">${escapeHtml(userAnswers.travelers || "")}</div>
-          </td>
-
-          <td class="summary-cell">
-            <div class="summary-label">Durée</div>
-            <div class="summary-value">${escapeHtml(userAnswers.tripDays || "")} jours</div>
-          </td>
-
-          <td class="summary-cell">
-            <div class="summary-label">Budget renseigné</div>
-            <div class="summary-value">${escapeHtml(formatMoney(userAnswers.budgetTotal))}</div>
-          </td>
-
-          <td class="summary-cell">
-            <div class="summary-label">Budget estimé</div>
-            <div class="summary-value">${escapeHtml(formatMoney(estimatedBudget))}</div>
-          </td>
-        </tr>
-      </table>
-
-      <table class="mini-table">
-        ${formatTravelPeriod(userAnswers)}
-        ${formatDuelPreferences(userAnswers)}
-        ${formatTemperaturePreferences(userAnswers)}
-        ${
-          userAnswers.usedFinalBudgetRelaunch === true
-            ? `
-              <tr>
-                <td class="mini-label">Relance budget</td>
-                <td class="mini-value">Utilisée depuis l’écran résultat</td>
-              </tr>
-            `
-            : ""
-        }
-      </table>
-
-${
-  userAnswers.usedFinalBudgetRelaunch === true
-    ? `
-      <tr>
-        <td class="mini-label">Relance budget</td>
-        <td class="mini-value">L’utilisateur a utilisé la relance budget depuis l’écran résultat</td>
-      </tr>
-    `
-    : ""
-}
 ${formatBudgetPreferences(userAnswers)}
 ${formatTransportAnswers(userAnswers)}
-${formatActivatedThemes(userAnswers)}
+
+${formatClimateSecurityRelief(userAnswers)}
+
+${formatGroupedThemes(userAnswers)}
 
 ${formatBudgetBreakdown(budgetBreakdown)}
-
+${formatDestinationTemperatures({ request, userAnswers })}
 ${formatDisplayedComments({ request, userAnswers })}
   `;
 }
