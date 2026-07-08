@@ -209,7 +209,10 @@ async function handleSubmit(event) {
     setErrors({});
     setSuccessInfo(null);
 
-    const apiBaseUrl = import.meta.env.VITE_API_URL || "";
+const apiBaseUrl =
+  import.meta.env.PROD
+    ? ""
+    : import.meta.env.VITE_API_URL || "http://localhost:3001";
 
     const response = await fetch(`${apiBaseUrl}/api/contact`, {
       method: "POST",

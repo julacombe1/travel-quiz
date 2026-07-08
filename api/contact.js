@@ -49,6 +49,9 @@ function getDestinationName(request) {
   );
 }
 
+
+
+
 function buildEmailHtml(payload, orderId) {
   const { contact, request } = payload;
 
@@ -110,7 +113,25 @@ ${escapeHtml(JSON.stringify(payload, null, 2))}
   `;
 }
 
+
 export default async function handler(req, res) {
+  if (req.method === "GET") {
+    return res.status(200).json({
+      success: true,
+      message: "API contact Vercel OK",
+      hasResendKey: Boolean(process.env.RESEND_API_KEY),
+      hasMailFrom: Boolean(process.env.MAIL_FROM),
+      hasMailTo: Boolean(process.env.MAIL_TO),
+    });
+  }
+
+  if (req.method !== "POST") {
+    return res.status(405).json({
+      message: "Méthode non autorisée.",
+    });
+  }
+
+
   if (req.method !== "POST") {
     return res.status(405).json({
       message: "Méthode non autorisée.",
@@ -150,4 +171,5 @@ export default async function handler(req, res) {
       message: "Erreur serveur pendant l'envoi de la demande.",
     });
   }
+  
 }
