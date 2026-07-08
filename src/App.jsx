@@ -349,7 +349,25 @@ const handleRestart = () => {
   setHistory(["start"]);
 };
 
-handlePlanT
+const handlePlanTrip = (payload) => {
+  const destination = payload?.destination ?? payload;
+  const budgetBreakdown = payload?.budgetBreakdown ?? null;
+
+  setPlannedTrip({
+    destination,
+    budgetBreakdown,
+    destinationRank:
+      payload?.destinationRank ??
+      payload?.rank ??
+      payload?.topRank ??
+      payload?.index + 1 ??
+      destination?.rank ??
+      null,
+  });
+
+  goTo("plan-trip");
+};
+
 
 const handleTripInterest = (payload = {}) => {
   setContactRequest({
@@ -358,6 +376,9 @@ const handleTripInterest = (payload = {}) => {
     destination: payload.destination ?? plannedTrip?.destination ?? null,
     budgetBreakdown:
       payload.budgetBreakdown ?? plannedTrip?.budgetBreakdown ?? null,
+
+    destinationRank:
+      payload.destinationRank ?? plannedTrip?.destinationRank ?? null,
 
     emailContext: {
       userAnswers,
@@ -575,12 +596,13 @@ const buildEmailContext = () => {
 )}
 
 {step === "plan-trip" && plannedTrip?.destination && (
-  <PlanTripScreen
-    destination={plannedTrip.destination}
-    budgetBreakdown={plannedTrip.budgetBreakdown}
-    onBack={goBack}
-    onInterested={handleTripInterest}
-  />
+<PlanTripScreen
+  destination={plannedTrip.destination}
+  budgetBreakdown={plannedTrip.budgetBreakdown}
+  destinationRank={plannedTrip.destinationRank}
+  onBack={goBack}
+  onInterested={handleTripInterest}
+/>
 )}
 {step === "contact" && contactRequest && (
   <ContactScreen
