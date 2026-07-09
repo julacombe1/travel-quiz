@@ -441,22 +441,6 @@ function formatPhoneLink(value) {
   )}</a>`;
 }
 
-function formatPeriodHtml(periodLabel) {
-  if (!hasValue(periodLabel)) return "";
-
-  const text = String(periodLabel);
-  const match = text.match(/^(.*?)\s*(\(.+\))$/);
-
-  if (!match) {
-    return `<span class="summary-important-value">${escapeHtml(text)}</span>`;
-  }
-
-  return `
-    <span class="summary-important-value">${escapeHtml(match[1].trim())}</span>
-    <span class="period-note">${escapeHtml(match[2])}</span>
-  `;
-}
-
 function formatContactTable(contact = {}) {
   const rows = [
     compactRow("Mode de contact", getContactModeLabel(contact.contactMode)),
