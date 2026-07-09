@@ -158,7 +158,7 @@ const planTripPeriodSuffix = hasExactDates
             {/* Ton logo sera ajouté ici plus tard */}
           </div>
 
-          <p className="plan-trip-kicker">Terre d&apos;Aur Travel Planner</p>
+          <p className="plan-trip-kicker">"Terres d&apos;Aur - Travel Planner"</p>
 
           <h1>
             Ton voyage sur-mesure,

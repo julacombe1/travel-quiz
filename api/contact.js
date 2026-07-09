@@ -418,11 +418,11 @@ function formatPeriodHtml(periodLabel) {
   const match = text.match(/^(.*?)\s*(\(.+\))$/);
 
   if (!match) {
-    return `<span class="period-main">${escapeHtml(text)}</span>`;
+    return `<span class="summary-important-value">${escapeHtml(text)}</span>`;
   }
 
   return `
-    <span class="period-main">${escapeHtml(match[1].trim())}</span>
+    <span class="summary-important-value">${escapeHtml(match[1].trim())}</span>
     <span class="period-note">${escapeHtml(match[2])}</span>
   `;
 }
@@ -670,30 +670,36 @@ function formatSummaryTable(
   const rankLabel = getDestinationRankLabel(request?.destinationRank);
 
   const rows = [
-    ["Destination", destinationName, { highlight: true }],
+    [
+      "Destination",
+      `<span class="summary-important-value">${escapeHtml(destinationName)}</span>`,
+      { rawHtml: true },
+    ],
     [
       "Voyageurs",
-      userAnswers.travelers ? `${userAnswers.travelers}` : "",
-      { highlight: true },
+      userAnswers.travelers
+        ? `<span class="summary-important-value">${escapeHtml(
+            userAnswers.travelers
+          )}</span>`
+        : "",
+      { rawHtml: true },
     ],
     [
       "Durée",
-      userAnswers.tripDays ? `${userAnswers.tripDays} jours` : "",
-      { highlight: true },
+      userAnswers.tripDays
+        ? `<span class="summary-important-value">${escapeHtml(
+            `${userAnswers.tripDays} jours`
+          )}</span>`
+        : "",
+      { rawHtml: true },
     ],
     [
       "Période",
       formatPeriodHtml(periodLabel),
-      { rawHtml: true, highlight: true },
+      { rawHtml: true },
     ],
     ["Budget renseigné", formatMoney(userAnswers.budgetTotal)],
-    [
-      "Budget total estimé par l'application",
-      `<span class="total-budget-value">${escapeHtml(
-        formatMoney(estimatedBudget)
-      )}</span>`,
-      { rawHtml: true, highlight: true },
-    ],
+    ["Budget estimé par l'application", formatMoney(estimatedBudget)],
     rankLabel ? ["Position au classement", rankLabel] : null,
   ].filter(Boolean);
 
@@ -709,6 +715,7 @@ function formatSummaryTable(
     </div>
   `;
 }
+
 
 function formatDuelPreferences(userAnswers = {}) {
   const adventureValue = pickFirstValue(userAnswers, [
@@ -799,16 +806,27 @@ function isDefaultTransportModes(modes = {}) {
   );
 }
 
+function isTransportModeActive(value) {
+  return (
+    value === true ||
+    value === 1 ||
+    value === "1" ||
+    value === "true" ||
+    value === "oui" ||
+    value === "yes"
+  );
+}
+
 function getSelectedTransportModes(userAnswers = {}) {
   const modes = userAnswers.transportModes || {};
 
-  if (isChecked(modes.indifferent)) {
+  if (isTransportModeActive(modes.indifferent)) {
     return [];
   }
 
   const labels = [];
 
-  if (isChecked(modes.voiture)) {
+  if (isTransportModeActive(modes.voiture)) {
     labels.push(
       userAnswers.avion === "non"
         ? "Voiture personnelle"
@@ -816,15 +834,15 @@ function getSelectedTransportModes(userAnswers = {}) {
     );
   }
 
-  if (isChecked(modes.commun)) {
+  if (isTransportModeActive(modes.commun)) {
     labels.push("Transports en commun");
   }
 
-  if (isChecked(modes.taxi)) {
+  if (isTransportModeActive(modes.taxi)) {
     labels.push("Taxi");
   }
 
-  if (isChecked(modes.vtc)) {
+  if (isTransportModeActive(modes.vtc)) {
     labels.push("VTC");
   }
 
@@ -1015,30 +1033,36 @@ function formatGroupedThemes(userAnswers = {}) {
 }
 
 function formatBudgetBreakdown(budgetBreakdown = {}) {
+  const total = getBudgetValue(budgetBreakdown, ["total"]);
+
   const rows = [
-    ["Transport initial", getBudgetValue(budgetBreakdown, ["avion", "initialTransport"])],
+    ["Avion / trajet", getBudgetValue(budgetBreakdown, ["avion", "initialTransport"])],
     ["Transport local", getBudgetValue(budgetBreakdown, ["transport", "localTransport"])],
     ["Logement", getBudgetValue(budgetBreakdown, ["logement"])],
     ["Nourriture", getBudgetValue(budgetBreakdown, ["bouffe", "food"])],
     ["Activités", getBudgetValue(budgetBreakdown, ["activites", "activities"])],
-    ["Rémunération Travel Planner", getBudgetValue(budgetBreakdown, ["travelPlanner", "planner"])],
-    ["Total estimé", getBudgetValue(budgetBreakdown, ["total"])],
-  ].filter(([, value]) => value !== null && value !== undefined && value !== "");
+    ["Travel Planner", getBudgetValue(budgetBreakdown, ["travelPlanner", "planner"])],
+  ].filter(([, value]) => hasValue(value));
 
-  if (!rows.length) return "";
+  if (!rows.length && !hasValue(total)) return "";
 
   return `
     <h2 class="section-title">Budget estimé par l'application</h2>
+
+    ${
+      hasValue(total)
+        ? `
+          <div class="budget-total-highlight">
+            <span>Budget total estimé</span>
+            <strong>${escapeHtml(formatMoney(total))}</strong>
+          </div>
+        `
+        : ""
+    }
+
     <table class="mini-table">
       ${rows
-        .map(
-          ([label, value]) => `
-            <tr>
-              <td class="mini-label">${escapeHtml(label)}</td>
-              <td class="mini-value align-right">${escapeHtml(formatMoney(value))}</td>
-            </tr>
-          `
-        )
+        .map(([label, value]) => compactRow(label, formatMoney(value)))
         .join("")}
     </table>
   `;
@@ -1418,6 +1442,43 @@ function buildEmailHtml(payload, orderId) {
   font-size: 12px;
   font-weight: 500;
   color: #7a6a85;
+.summary-important-value {
+  font-size: 16px;
+  font-weight: 950;
+  color: #2f2440;
+}
+
+.period-note {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #7a6a85;
+}
+
+.budget-total-highlight {
+  margin: 10px 0 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #f9eefc;
+  border: 1px solid #eadcf4;
+  text-align: center;
+}
+
+.budget-total-highlight span {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #6c3b85;
+}
+
+.budget-total-highlight strong {
+  display: block;
+  font-size: 24px;
+  font-weight: 950;
+  color: #8d45b5;
+}  
 }
       </style>
 
