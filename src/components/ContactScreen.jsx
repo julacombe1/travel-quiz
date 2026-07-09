@@ -311,6 +311,20 @@ try {
   setIsSending(false);
 }
 }
+
+const handleContactModeClick = (modeId) => {
+  updateField("contactMode", modeId);
+
+  if (modeId === "whatsapp" && form.phone && !form.whatsapp) {
+    updateField("whatsapp", form.phone);
+  }
+
+  if (modeId === "phone" && form.whatsapp && !form.phone) {
+    updateField("phone", form.whatsapp);
+  }
+};
+
+
   return (
     <div className="contact-bg">
       <main className="contact-screen">
@@ -338,7 +352,7 @@ try {
                   className={`contact-mode-card ${
                     isSelected ? "selected" : ""
                   }`}
-                  onClick={() => updateField("contactMode", mode.id)}
+                  onClick={() => handleContactModeClick(mode.id)}
                 >
                   <span className="contact-mode-icon">{mode.icon}</span>
 
@@ -369,15 +383,25 @@ try {
                     <span>
                       Numéro de téléphone <strong>*</strong>
                     </span>
-                    <input
-                      type="tel"
-                      value={form.phone}
-                      placeholder="Ex : 0612345678"
-                      onChange={(event) =>
-                        updateField("phone", event.target.value)
-                      }
-                      onBlur={() => setErrors(validateForm())}
-                    />
+<input
+  type="tel"
+  name="phone"
+  autoComplete="tel"
+  inputMode="tel"
+  value={form.phone}
+  placeholder="Ex : 0612345678"
+  onChange={(event) => {
+    const value = event.target.value;
+
+    updateField("phone", value);
+
+    // Si WhatsApp est vide, on le pré-remplit aussi
+    if (!form.whatsapp) {
+      updateField("whatsapp", value);
+    }
+  }}
+  onBlur={() => setErrors(validateForm())}
+/>
                     {errors.phone && (
                       <small className="contact-error">{errors.phone}</small>
                     )}
@@ -389,15 +413,25 @@ try {
                     <span>
                       Numéro WhatsApp <strong>*</strong>
                     </span>
-                    <input
-                      type="tel"
-                      value={form.whatsapp}
-                      placeholder="Ex : +33612345678"
-                      onChange={(event) =>
-                        updateField("whatsapp", event.target.value)
-                      }
-                      onBlur={() => setErrors(validateForm())}
-                    />
+<input
+  type="tel"
+  name="phone"
+  autoComplete="tel"
+  inputMode="tel"
+  value={form.whatsapp}
+  placeholder="Ex : +33612345678"
+  onChange={(event) => {
+    const value = event.target.value;
+
+    updateField("whatsapp", value);
+
+    // Comme WhatsApp = téléphone, on garde aussi phone synchronisé si vide
+    if (!form.phone) {
+      updateField("phone", value);
+    }
+  }}
+  onBlur={() => setErrors(validateForm())}
+/>
                     {errors.whatsapp && (
                       <small className="contact-error">
                         {errors.whatsapp}

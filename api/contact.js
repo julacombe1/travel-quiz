@@ -387,21 +387,27 @@ function compactRow(label, value, options = {}) {
 
   const displayValue = Array.isArray(value) ? value.join(", ") : value;
 
-  const labelStyle = options.highlight
-    ? "width:42%; padding:9px 8px; border-bottom:1px solid #eee; color:#5b2b72; font-size:13px; font-weight:800;"
+  const labelStyle = options.labelEmphasis
+    ? "width:42%; padding:9px 8px; border-bottom:1px solid #eee; color:#5b2b72; font-size:13px; font-weight:bold;"
     : "width:42%; padding:7px 8px; border-bottom:1px solid #eee; color:#6c5b75; font-size:13px;";
 
-  const valueStyle = options.highlight
-    ? "padding:9px 8px; border-bottom:1px solid #eee; color:#2f2440; font-size:16px; font-weight:950;"
-    : "padding:7px 8px; border-bottom:1px solid #eee; color:#2f2440; font-size:13px; font-weight:700;";
+  const valueStyle = options.valueBig
+    ? "padding:9px 8px; border-bottom:1px solid #eee; color:#2f2440; font-size:16px; font-weight:bold;"
+    : "padding:9px 8px; border-bottom:1px solid #eee; color:#2f2440; font-size:13px; font-weight:700;";
+
+  const labelHtml = options.labelEmphasis
+    ? `<strong style="font-weight:bold;">${escapeHtml(label)}</strong>`
+    : escapeHtml(label);
 
   const finalValue = options.rawHtml
     ? displayValue
+    : options.valueEmphasis
+    ? `<strong style="font-weight:bold;">${escapeHtml(displayValue)}</strong>`
     : escapeHtml(displayValue);
 
   return `
     <tr>
-      <td style="${labelStyle}">${escapeHtml(label)}</td>
+      <td style="${labelStyle}">${labelHtml}</td>
       <td style="${valueStyle}">${finalValue}</td>
     </tr>
   `;
@@ -414,14 +420,16 @@ function formatPeriodHtml(periodLabel) {
   const match = text.match(/^(.*?)\s*(\(.+\))$/);
 
   if (!match) {
-    return `<span style="font-size:16px; font-weight:950; color:#2f2440;">${escapeHtml(text)}</span>`;
+    return `<strong style="font-size:16px; font-weight:bold; color:#2f2440;">${escapeHtml(
+      text
+    )}</strong>`;
   }
 
   return `
-    <span style="font-size:16px; font-weight:950; color:#2f2440;">
+    <strong style="font-size:16px; font-weight:bold; color:#2f2440;">
       ${escapeHtml(match[1].trim())}
-    </span>
-    <span style="font-size:12px; font-weight:500; color:#7a6a85;">
+    </strong>
+    <span style="font-size:12px; font-weight:400; color:#7a6a85;">
       ${escapeHtml(match[2])}
     </span>
   `;
@@ -684,25 +692,66 @@ function formatSummaryTable(
   const rankLabel = getDestinationRankLabel(request?.destinationRank);
 
   const rows = [
-    ["Destination", destinationName, { highlight: true }],
+    [
+      "Destination",
+      destinationName,
+      {
+        labelEmphasis: true,
+        valueEmphasis: true,
+        valueBig: true,
+      },
+    ],
     [
       "Voyageurs",
       userAnswers.travelers ? `${userAnswers.travelers}` : "",
-      { highlight: true },
+      {
+        labelEmphasis: true,
+        valueEmphasis: true,
+        valueBig: true,
+      },
     ],
     [
       "Durée",
       userAnswers.tripDays ? `${userAnswers.tripDays} jours` : "",
-      { highlight: true },
+      {
+        labelEmphasis: true,
+        valueEmphasis: true,
+        valueBig: true,
+      },
     ],
     [
       "Période",
       formatPeriodHtml(periodLabel),
-      { highlight: true, rawHtml: true },
+      {
+        labelEmphasis: true,
+        rawHtml: true,
+        valueBig: true,
+      },
     ],
-    ["Budget renseigné", formatMoney(userAnswers.budgetTotal)],
-    ["Budget estimé par l'application", formatMoney(estimatedBudget)],
-    rankLabel ? ["Position au classement", rankLabel] : null,
+
+    [
+      "Budget renseigné",
+      formatMoney(userAnswers.budgetTotal),
+      {
+        labelEmphasis: true,
+      },
+    ],
+    [
+      "Budget estimé par l'application",
+      formatMoney(estimatedBudget),
+      {
+        labelEmphasis: true,
+      },
+    ],
+    rankLabel
+      ? [
+          "Position au classement",
+          rankLabel,
+          {
+            labelEmphasis: true,
+          },
+        ]
+      : null,
   ].filter(Boolean);
 
   return `
@@ -717,7 +766,6 @@ function formatSummaryTable(
     </div>
   `;
 }
-
 
 function formatDuelPreferences(userAnswers = {}) {
   const adventureValue = pickFirstValue(userAnswers, [
@@ -974,16 +1022,20 @@ function formatClimateSecurityRelief(userAnswers = {}) {
     ]);
   }
 
-const waterRange = formatRange(userAnswers.teauMin, userAnswers.teauMax);
+  const waterRange = formatRange(userAnswers.teauMin, userAnswers.teauMax);
 
-const hasWaterTheme =
-  Number(userAnswers.mer) > 0 ||
-  Number(userAnswers.bain) > 0 ||
-  Number(userAnswers.inso) > 0;
+  const hasWaterTheme =
+    Number(userAnswers.mer) > 0 ||
+    Number(userAnswers.bain) > 0 ||
+    Number(userAnswers.inso) > 0;
 
-if (waterRange && hasWaterTheme) {
-  rows.push(["Température de l’eau souhaitée", waterRange]);
-}
+  if (waterRange && hasWaterTheme) {
+    rows.push(["Température de l’eau souhaitée", waterRange]);
+  }
+
+  if (Number(userAnswers.tour) > 0) {
+    rows.push(["Fréquentation touristique", `${userAnswers.tour}/5`]);
+  }
 
   if (Number(userAnswers.secu) > 0) {
     rows.push(["Sécurité", `${userAnswers.secu}/5`]);
@@ -992,7 +1044,7 @@ if (waterRange && hasWaterTheme) {
   if (!rows.length) return "";
 
   return `
-    <h2 class="section-title">Températures, sécurité et relief</h2>
+    <h2 class="section-title">Températures, fréquentation, sécurité et relief</h2>
     <table class="mini-table">
       ${rows.map(([label, value]) => compactRow(label, value)).join("")}
     </table>
@@ -1061,9 +1113,9 @@ function formatBudgetBreakdown(budgetBreakdown) {
               ? "padding:13px 8px; border-top:2px solid #eadcf4; font-size:15px; font-weight:900; color:#5b2b72;"
               : "padding:9px 8px; border-bottom:1px solid #eee; color:#6c5b75;";
 
-            const valueStyle = isTotal
-              ? "padding:13px 8px; border-top:2px solid #eadcf4; text-align:right; font-size:22px; font-weight:950; color:#8d45b5;"
-              : "padding:9px 8px; border-bottom:1px solid #eee; text-align:right; font-weight:800; color:#2f2440;";
+const valueStyle = isTotal
+  ? "padding:12px 8px; border-top:2px solid #eadcf4; text-align:right; font-size:18px; font-weight:bold; color:#8d45b5;"
+  : "padding:9px 8px; border-bottom:1px solid #eee; text-align:right; font-weight:800; color:#2f2440;";
 
             return `
               <tr>
