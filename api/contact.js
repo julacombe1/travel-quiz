@@ -463,52 +463,32 @@ function formatDestinationBlock(request, destinationName) {
   `;
 }
 
-function formatSummaryTable(userAnswers = {}, budgetBreakdown = {}) {
+function formatSummaryTable(userAnswers = {}, budgetBreakdown = {}, request = {}, destinationName = "") {
   const estimatedBudget = getBudgetValue(budgetBreakdown, ["total"]);
   const periodLabel = getTravelPeriodLabel(userAnswers);
+  const rankLabel = getDestinationRankLabel(request?.destinationRank);
 
-  const cells = [
+  const rows = [
+    ["Destination", destinationName],
+    rankLabel ? ["Classement", rankLabel] : null,
     ["Voyageurs", userAnswers.travelers || ""],
     ["Durée", userAnswers.tripDays ? `${userAnswers.tripDays} jours` : ""],
     ["Période", periodLabel],
     ["Budget renseigné", formatMoney(userAnswers.budgetTotal)],
     ["Budget estimé", formatMoney(estimatedBudget)],
-  ];
-
-  const relaunchRow =
     userAnswers.usedFinalBudgetRelaunch === true
-      ? compactRow("Relance budget", "Utilisée depuis l’écran résultat")
-      : "";
+      ? ["Relance budget", "Utilisée depuis l’écran résultat"]
+      : null,
+  ].filter(Boolean);
 
   return `
-    <h2 class="section-title">Résumé du voyage</h2>
+    <div class="summary-card">
+      <h2 class="summary-card-title">Résumé du voyage</h2>
 
-    <table class="summary-grid">
-      <tr>
-        ${cells
-          .map(
-            ([label, value]) => `
-              <td class="summary-cell">
-                <div class="summary-label">${escapeHtml(label)}</div>
-                <div class="summary-value ${
-                  label === "Période" ? "small" : ""
-                }">${escapeHtml(value)}</div>
-              </td>
-            `
-          )
-          .join("")}
-      </tr>
-    </table>
-
-    ${
-      relaunchRow
-        ? `
-          <table class="mini-table">
-            ${relaunchRow}
-          </table>
-        `
-        : ""
-    }
+      <table class="mini-table summary-table">
+        ${rows.map(([label, value]) => compactRow(label, value)).join("")}
+      </table>
+    </div>
   `;
 }
 
@@ -712,7 +692,32 @@ function formatClimateSecurityRelief(userAnswers = {}) {
 
     rows.push([
       "Chaleur",
-      heatRange ? `${userAnswers.chal}/5 — ${heatRange}` : `${userAnswers.chal}/5`,
+      heatRange
+        ? `${userAnswers.chal}/5 — ${heatRange}`
+        : `${userAnswers.chal}/5`,
+    ]);
+  }
+
+  const waterRange = formatRange(userAnswers.teauMin, userAnswers.teauMax);
+
+  const selectedWaterThemes = [];
+
+  if (Number(userAnswers.mer) > 0) {
+    selectedWaterThemes.push(`Baignade mer ${userAnswers.mer}/5`);
+  }
+
+  if (Number(userAnswers.bain) > 0) {
+    selectedWaterThemes.push(`Baignade ${userAnswers.bain}/5`);
+  }
+
+  if (Number(userAnswers.inso) > 0) {
+    selectedWaterThemes.push(`Baignade insolite ${userAnswers.inso}/5`);
+  }
+
+  if (waterRange && selectedWaterThemes.length) {
+    rows.push([
+      "Température de l’eau souhaitée",
+      `${waterRange} — ${selectedWaterThemes.join(", ")}`,
     ]);
   }
 
@@ -723,7 +728,7 @@ function formatClimateSecurityRelief(userAnswers = {}) {
   if (!rows.length) return "";
 
   return `
-    <h2 class="section-title">Chaleur, sécurité et relief</h2>
+    <h2 class="section-title">Températures, sécurité et relief</h2>
     <table class="mini-table">
       ${rows.map(([label, value]) => compactRow(label, value)).join("")}
     </table>
@@ -1073,6 +1078,37 @@ function buildEmailHtml(payload, orderId) {
           font-size: 13px;
           line-height: 1.35;
         }
+        .summary-card {
+  margin: 14px 0 18px;
+  padding: 14px;
+  border-radius: 16px;
+  background: #f9eefc;
+  border: 1px solid #eadcf4;
+}
+
+.summary-card-title {
+  margin: 0 0 10px;
+  font-size: 19px;
+  color: #8d45b5;
+}
+
+.summary-card .mini-table {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.summary-card .mini-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #6c3b85;
+}
+
+.summary-card .mini-value {
+  font-size: 13px;
+  font-weight: 800;
+  color: #2f2440;
+}  
       </style>
 
       <div style="max-width:760px; margin:0 auto; background:white; border-radius:18px; padding:20px;">
@@ -1081,8 +1117,7 @@ function buildEmailHtml(payload, orderId) {
         </h1>
 
         ${formatContactTable(contact)}
-        ${formatDestinationBlock(request, destinationName)}
-        ${formatSummaryTable(userAnswers, budgetBreakdown)}
+        ${formatSummaryTable(userAnswers, budgetBreakdown, request, destinationName)}
         ${formatDuelPreferences(userAnswers)}
         ${formatBudgetPreferences(userAnswers)}
         ${formatTransportAnswers(userAnswers)}

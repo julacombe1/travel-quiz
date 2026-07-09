@@ -4,7 +4,7 @@ import destinations from "../src/data/destinations.js";
 import { calculateResults } from "../src/engine/calculateResults.js";
 import { simulateAnswers } from "../src/simulator/simulateAnswers.js";
 
-const SIMULATION_COUNT = 10000;
+const SIMULATION_COUNT = 50000;
 const TOP_N = 10;
 const OUTPUT_FILE = "simulation-results.xlsx";
 
