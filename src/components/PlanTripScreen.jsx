@@ -48,6 +48,8 @@ function getBudgetRows(budgetBreakdown = {}) {
   ];
 }
 
+
+
 export default function PlanTripScreen({
   destination,
   budgetBreakdown,
@@ -59,82 +61,104 @@ export default function PlanTripScreen({
   onBack,
   onInterested,
 }) {
- const destinationName = destination?.nom ?? "votre destination";
-const budgetRows = getBudgetRows(budgetBreakdown);
-const totalBudget = Number(budgetBreakdown?.total) || 0;
+  const destinationName =
+    destination?.nom || destination?.name || "votre destination";
 
-const [showOtherDestinationPopup, setShowOtherDestinationPopup] =
-  useState(false);
+  const budgetRows = getBudgetRows(budgetBreakdown);
+  const totalBudget = Number(budgetBreakdown?.total) || 0;
 
-const [otherDestinationName, setOtherDestinationName] = useState("");
-const [requestDestinationName, setRequestDestinationName] = useState(null);
-const handleOtherDestinationSubmit = () => {
-  const cleanDestinationName = otherDestinationName.trim();
-const openRequestForDestination = (name, isCustomDestination = false) => {
-  const cleanName = String(name ?? "").trim();
-const destinationName = destination?.nom || destination?.name || "cette destination";
+  const [showOtherDestinationPopup, setShowOtherDestinationPopup] =
+    useState(false);
 
-const cleanTravelPeriodLabel = travelPeriodLabel || "";
+  const [otherDestinationName, setOtherDestinationName] = useState("");
 
-const travelPeriodText =
-  cleanTravelPeriodLabel && travelPeriodType === "best"
-    ? `${cleanTravelPeriodLabel} — meilleur mois calculé`
-    : cleanTravelPeriodLabel && travelPeriodType === "fixed"
-    ? `${cleanTravelPeriodLabel} — mois choisi`
-    : cleanTravelPeriodLabel;
+  const cleanTravelPeriodLabel = travelPeriodLabel || "";
 
-const buttonPeriodText =
-  cleanTravelPeriodLabel && travelPeriodType === "best"
-    ? ` en ${cleanTravelPeriodLabel}`
-    : cleanTravelPeriodLabel && travelPeriodType === "fixed"
-    ? ` en ${cleanTravelPeriodLabel}`
-    : "";
+  const travelPeriodText =
+    cleanTravelPeriodLabel && travelPeriodType === "best"
+      ? `${cleanTravelPeriodLabel} — meilleur mois calculé`
+      : cleanTravelPeriodLabel && travelPeriodType === "fixed"
+      ? `${cleanTravelPeriodLabel} — mois choisi`
+      : cleanTravelPeriodLabel;
 
-  if (!cleanName) return;
+  const buttonPeriodText =
+    cleanTravelPeriodLabel &&
+    (travelPeriodType === "best" || travelPeriodType === "fixed")
+      ? ` en ${cleanTravelPeriodLabel}`
+      : "";
 
-  setRequestDestinationName(cleanName);
+  const openRequestForDestination = (
+    name,
+    isCustomDestination = false
+  ) => {
+    const cleanName = String(name ?? "").trim();
 
-  onInterested?.({
-    type: "selected-destination",
-    destination: {
-      ...destination,
-      nom: cleanName,
-    },
-    originalDestination: destination,
-    destinationName: cleanName,
-    customDestinationName: isCustomDestination ? cleanName : null,
-    isCustomDestination,
-    budgetBreakdown,
-  });
-};
+    if (!cleanName) return;
 
-const handleOtherDestinationSubmit = () => {
-  const cleanDestinationName = otherDestinationName.trim();
+    const nextDestination = isCustomDestination
+      ? {
+          ...destination,
+          nom: cleanName,
+          name: cleanName,
+        }
+      : destination;
 
-  if (!cleanDestinationName) return;
+    onInterested?.({
+      mode: isCustomDestination ? "customDestination" : "selectedDestination",
+      type: isCustomDestination
+        ? "custom-destination"
+        : "selected-destination",
 
-  setShowOtherDestinationPopup(false);
-  setOtherDestinationName("");
+      destination: nextDestination,
+      originalDestination: destination,
 
-  openRequestForDestination(cleanDestinationName, true);
-};
-  if (!cleanDestinationName) return;
+      destinationName: cleanName,
+      customDestination: isCustomDestination ? cleanName : null,
+      customDestinationName: isCustomDestination ? cleanName : null,
+      isCustomDestination,
 
-  onInterested?.({
-    type: "selected-destination",
-    destination: {
-      ...destination,
-      nom: cleanDestinationName,
-    },
-    originalDestination: destination,
-    customDestinationName: cleanDestinationName,
-    isCustomDestination: true,
-    budgetBreakdown,
-  });
+      budgetBreakdown,
 
-  setShowOtherDestinationPopup(false);
-  setOtherDestinationName("");
-};
+      destinationRank: isCustomDestination ? null : destinationRank,
+      selectedMonth,
+      exactDates,
+      travelPeriodLabel,
+      travelPeriodType,
+    });
+  };
+
+  const handleOtherDestinationSubmit = () => {
+    const cleanDestinationName = otherDestinationName.trim();
+
+    if (!cleanDestinationName) return;
+
+    setShowOtherDestinationPopup(false);
+    setOtherDestinationName("");
+
+    openRequestForDestination(cleanDestinationName, true);
+  };
+function formatPlanDateFr(value) {
+  if (!value) return "";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+
+  return date.toLocaleDateString("fr-FR");
+}
+
+const hasExactDates = exactDates?.from || exactDates?.to;
+
+const planTripPeriodSuffix = hasExactDates
+  ? ` entre le ${formatPlanDateFr(exactDates.from)} et le ${formatPlanDateFr(
+      exactDates.to
+    )}`
+  : cleanTravelPeriodLabel
+  ? ` en ${cleanTravelPeriodLabel}`
+  : "";
+  
   return (
     <div className="plan-trip-screen">
       <div className="plan-trip-overlay">
@@ -145,19 +169,19 @@ const handleOtherDestinationSubmit = () => {
 
           <p className="plan-trip-kicker">Terre d&apos;Aur Travel Planner</p>
 
-          <h1>
+          <h3>
             Ton voyage sur-mesure,
             <br />
             sans le stress de l&apos;organisation !
-          </h1>
-          {travelPeriodText && (
-  <p className="plan-trip-period">
-    📅 {travelPeriodText}
-  </p>
-)}
-          <p className="plan-trip-destination">
-            Projet pour : <strong>{destinationName}</strong>
-          </p>
+          </h3>
+
+<p className="plan-trip-destination">
+  Projet pour :{" "}
+  <strong>
+    {destinationName}
+    {planTripPeriodSuffix}
+  </strong>
+</p>
 
           <div className="plan-trip-text-block">
             <p>
