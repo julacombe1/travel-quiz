@@ -1015,12 +1015,61 @@ function NoResultsRestitutionScreen({
   const isBudgetIssue = diagnostic?.mainReason === "budget";
   const isTemperatureIssue = diagnostic?.mainReason === "temperature";
 
+  const travelers = Number(userAnswers?.travelers) || 2;
+  const maxBudget = getMaxBudget(travelers);
+
+  const currentBudget = userAnswers?.budgetMaxSelected
+    ? maxBudget
+    : Number(userAnswers?.budgetTotal) || DEFAULT_BUDGET_FOR_2;
+
+  const [popupBudgetTotal, setPopupBudgetTotal] = useState(currentBudget);
+  const [popupBudgetMaxSelected, setPopupBudgetMaxSelected] = useState(
+    userAnswers?.budgetMaxSelected ?? false
+  );
+  const [relaunchLoading, setRelaunchLoading] = useState(false);
+
+  const shouldApplyStrictMinimum =
+    Number(userAnswers?.budgetLogement) !== 1 ||
+    Number(userAnswers?.budgetFood) !== 1 ||
+    Number(userAnswers?.budgetActivite) !== 1;
+
+  const cleanAdvice = noResultsAdvice.filter(
+    (advice) =>
+      !String(advice).toLowerCase().includes("budget total") &&
+      !String(advice).toLowerCase().includes("augmenter ton budget")
+  );
+
+  const handleBudgetSliderChange = (sliderValue) => {
+    const nextBudget = sliderToBudget(sliderValue, maxBudget);
+
+    setPopupBudgetTotal(nextBudget);
+    setPopupBudgetMaxSelected(false);
+  };
+
+  const handleBudgetMax = () => {
+    setPopupBudgetTotal(maxBudget);
+    setPopupBudgetMaxSelected(true);
+  };
+
+  const handleBudgetRelaunch = () => {
+    setRelaunchLoading(true);
+
+    setTimeout(() => {
+      onRelaunchWithMaxBudget?.({
+        budgetTotal: popupBudgetMaxSelected ? maxBudget : popupBudgetTotal,
+        budgetMaxSelected: popupBudgetMaxSelected,
+        budgetManuallyEdited: true,
+        applyStrictMinimum: shouldApplyStrictMinimum,
+      });
+
+      setRelaunchLoading(false);
+    }, 450);
+  };
+
   return (
     <div className="new-results-screen">
       <section className="new-results-top-block">
-        <h1 className="new-results-main-title">
-          Aucune destination trouvée
-        </h1>
+        <h1 className="new-results-main-title">Aucune destination trouvée</h1>
       </section>
 
       <section className="new-main-destination-card no-result-destination-card">
@@ -1028,39 +1077,93 @@ function NoResultsRestitutionScreen({
 
         <h2>{getNoResultsTitle(diagnostic)}</h2>
 
-        <p className="new-result-period">
-          {getNoResultsIntro(diagnostic)}
-        </p>
+        <p className="new-result-period">{getNoResultsIntro(diagnostic)}</p>
 
-        <div className="no-results-advice no-results-advice-card">
-          <p>Pour débloquer plus de destinations, tu peux essayer de :</p>
+        {relaunchLoading ? (
+          <div className="date-loading-box">
+            <div className="date-hourglass">⏳</div>
 
-          <ul>
-            {noResultsAdvice.map((advice) => (
-              <li key={advice}>{advice}</li>
-            ))}
-          </ul>
-        </div>
+            <div className="date-loading-text">
+              <strong>Calcul de ta destination...</strong>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="no-results-advice no-results-advice-card">
+              <p>Pour débloquer plus de destinations, tu peux essayer de :</p>
 
-        {isBudgetIssue && (
-          <button
-            type="button"
-            className="app-btn ok no-result-action-btn"
-            onClick={() => onRelaunchWithMaxBudget?.()}
-          >
-            Relancer avec budget illimité
-          </button>
-        )}
+              <ul>
+                {cleanAdvice.map((advice) => (
+                  <li key={advice}>{advice}</li>
+                ))}
 
-        {isTemperatureIssue && (
-          <button
-            type="button"
-            className="app-btn ok no-result-action-btn two-lines"
-            onClick={() => onRelaunchWithoutHeat?.()}
-          >
-            <span>Relancer sans</span>
-            <span>critère chaleur</span>
-          </button>
+                {isBudgetIssue && (
+                  <li>
+                    Augmenter ton budget total :
+
+                    <div className="popup-budget-block">
+                      <div className="popup-budget-value">
+                        {popupBudgetMaxSelected
+                          ? `> ${maxBudget.toLocaleString("fr-FR")} €`
+                          : `${popupBudgetTotal.toLocaleString("fr-FR")} €`}
+                      </div>
+
+                      <input
+                        className="popup-budget-slider"
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value={
+                          popupBudgetMaxSelected
+                            ? 100
+                            : budgetToSlider(popupBudgetTotal, maxBudget)
+                        }
+                        onChange={(event) =>
+                          handleBudgetSliderChange(event.target.value)
+                        }
+                      />
+
+                      <button
+                        type="button"
+                        className={`popup-max-btn ${
+                          popupBudgetMaxSelected ? "active" : ""
+                        }`}
+                        onClick={handleBudgetMax}
+                      >
+                        MAX
+                      </button>
+                    </div>
+                  </li>
+                )}
+              </ul>
+            </div>
+
+            {isBudgetIssue && (
+              <button
+                type="button"
+                className="app-btn relaunch no-result-action-btn two-lines"
+                onClick={handleBudgetRelaunch}
+              >
+                <span>Relancer avec</span>
+                <span>ce budget</span>
+                {shouldApplyStrictMinimum && (
+                  <strong>et en strict minimum</strong>
+                )}
+              </button>
+            )}
+
+            {isTemperatureIssue && (
+              <button
+                type="button"
+                className="app-btn ok no-result-action-btn two-lines"
+                onClick={() => onRelaunchWithoutHeat?.()}
+              >
+                <span>Relancer sans</span>
+                <span>critère chaleur</span>
+              </button>
+            )}
+          </>
         )}
       </section>
 
@@ -1080,7 +1183,6 @@ function NoResultsRestitutionScreen({
     </div>
   );
 }
-
 
 function ResultsScreen({
   results,
@@ -1111,6 +1213,10 @@ const [popupBudgetMaxSelected, setPopupBudgetMaxSelected] = useState(
   userAnswers?.budgetMaxSelected ?? false
 );
 
+const shouldApplyStrictMinimum =
+  Number(userAnswers.budgetLogement) !== 1 ||
+  Number(userAnswers.budgetFood) !== 1 ||
+  Number(userAnswers.budgetActivite) !== 1;
 
 if (showLegacyResults) {
   return (
@@ -1394,6 +1500,7 @@ const cleanBudgetAdvice = getCleanBudgetAdvice(userAnswers);
   onPlanTrip?.({
     destination: res,
     budgetBreakdown,
+    destinationRank: selectedIndex + 1,
   })
 }
     >
@@ -1539,6 +1646,9 @@ const cleanBudgetAdvice = getCleanBudgetAdvice(userAnswers);
   >
     <span>Relancer avec</span>
     <span>ce budget</span>
+      {shouldApplyStrictMinimum && (
+    <strong>et en strict minimum</strong>
+  )}
   </button>
 </div>
         </>

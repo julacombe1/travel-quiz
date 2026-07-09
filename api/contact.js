@@ -463,6 +463,81 @@ function formatDestinationBlock(request, destinationName) {
   `;
 }
 
+function formatRelaunchInfo(userAnswers = {}) {
+  const rows = [];
+
+  if (userAnswers.usedFinalBudgetRelaunch === true) {
+    rows.push(["Relance budget", "Oui"]);
+
+    if (hasValue(userAnswers.initialBudgetBeforeRelaunch)) {
+      rows.push([
+        "Budget initialement renseigné",
+        formatMoney(userAnswers.initialBudgetBeforeRelaunch),
+      ]);
+    }
+  }
+
+  if (userAnswers.usedStrictMinBudgetRelaunch === true) {
+    const initialLevels = [
+      userAnswers.initialBudgetLogementBeforeRelaunch
+        ? `Logement : ${getBudgetLevelLabel(
+            userAnswers.initialBudgetLogementBeforeRelaunch
+          )}`
+        : null,
+
+      userAnswers.initialBudgetFoodBeforeRelaunch
+        ? `Nourriture : ${getBudgetLevelLabel(
+            userAnswers.initialBudgetFoodBeforeRelaunch
+          )}`
+        : null,
+
+      userAnswers.initialBudgetActiviteBeforeRelaunch
+        ? `Activités : ${getBudgetLevelLabel(
+            userAnswers.initialBudgetActiviteBeforeRelaunch
+          )}`
+        : null,
+    ].filter(Boolean);
+
+    if (initialLevels.length) {
+      rows.push([
+        "Critères budget initialement renseignés",
+        initialLevels.join(" — "),
+      ]);
+    }
+
+    rows.push([
+      "Relance strict minimum",
+      "Logement, nourriture et activités passés en strict minimum",
+    ]);
+  }
+
+  if (userAnswers.usedFinalHeatRelaunch === true) {
+    rows.push(["Relance chaleur", "Oui"]);
+
+    const initialHeatRange = formatRange(
+      userAnswers.initialChalMinBeforeRelaunch,
+      userAnswers.initialChalMaxBeforeRelaunch
+    );
+
+    if (initialHeatRange) {
+      rows.push([
+        "Intervalle chaleur initialement sélectionné",
+        initialHeatRange,
+      ]);
+    }
+  }
+
+  if (!rows.length) return "";
+
+  return `
+    <h2 class="section-title">Relances effectuées</h2>
+    <table class="mini-table">
+      ${rows.map(([label, value]) => compactRow(label, value)).join("")}
+    </table>
+  `;
+}
+
+
 function formatSummaryTable(userAnswers = {}, budgetBreakdown = {}, request = {}, destinationName = "") {
   const estimatedBudget = getBudgetValue(budgetBreakdown, ["total"]);
   const periodLabel = getTravelPeriodLabel(userAnswers);
@@ -886,30 +961,59 @@ function formatDestinationTemperatures({ request, userAnswers }) {
   );
 
   if (hasValue(airTemp)) {
-    rows.push([`Température destination ${monthLabel ? `(${monthLabel})` : ""}`, formatNumber(airTemp, "°C")]);
+    rows.push([
+      `Température destination ${monthLabel ? `(${monthLabel})` : ""}`,
+      formatNumber(airTemp, "°C"),
+    ]);
   }
 
-  const waterTemp = readMonthlyValue(
+  const hasSeaWaterTheme =
+    Number(userAnswers.mer) > 0 || Number(userAnswers.bain) > 0;
+
+  const hasInsoWaterTheme = Number(userAnswers.inso) > 0;
+
+  const merTemp = readMonthlyValue(
     destination,
     [
+      "mer",
       "teau",
       "eau",
-      "tempEau",
-      "temperatureEau",
-      "merTemp",
       "tempMer",
       "temperatureMer",
+      "merTemp",
+      "tempEauMer",
+      "temperatureEauMer",
     ],
     monthKey
   );
 
-  if (
-    hasValue(waterTemp) &&
-    (Number(userAnswers.mer) > 0 ||
-      Number(userAnswers.bain) > 0 ||
-      Number(userAnswers.inso) > 0)
-  ) {
-    rows.push([`Température de l’eau ${monthLabel ? `(${monthLabel})` : ""}`, formatNumber(waterTemp, "°C")]);
+  const insoTemp = readMonthlyValue(
+    destination,
+    [
+      "inso",
+      "tempInso",
+      "temperatureInso",
+      "eauInso",
+      "tempEauInso",
+      "temperatureEauInso",
+    ],
+    monthKey
+  );
+
+  if (hasSeaWaterTheme && hasValue(merTemp)) {
+    rows.push([
+      `Température de l’eau mer ${monthLabel ? `(${monthLabel})` : ""}`,
+      formatNumber(merTemp, "°C"),
+    ]);
+  }
+
+  if (hasInsoWaterTheme && hasValue(insoTemp)) {
+    rows.push([
+      `Température de baignade insolite ${
+        monthLabel ? `(${monthLabel})` : ""
+      }`,
+      formatNumber(insoTemp, "°C"),
+    ]);
   }
 
   if (!rows.length) return "";
@@ -1118,6 +1222,7 @@ function buildEmailHtml(payload, orderId) {
 
         ${formatContactTable(contact)}
         ${formatSummaryTable(userAnswers, budgetBreakdown, request, destinationName)}
+        ${formatRelaunchInfo(userAnswers)}
         ${formatDuelPreferences(userAnswers)}
         ${formatBudgetPreferences(userAnswers)}
         ${formatTransportAnswers(userAnswers)}

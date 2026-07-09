@@ -28,6 +28,16 @@ const initialAnswers = {
   budgetMaxSelected: false,
   budgetManuallyEdited: false,
   usedFinalBudgetRelaunch: false,
+usedFinalHeatRelaunch: false,
+usedStrictMinBudgetRelaunch: false,
+
+initialBudgetBeforeRelaunch: null,
+initialChalMinBeforeRelaunch: null,
+initialChalMaxBeforeRelaunch: null,
+
+initialBudgetLogementBeforeRelaunch: null,
+initialBudgetFoodBeforeRelaunch: null,
+initialBudgetActiviteBeforeRelaunch: null,
 
   tripDays: 15,
   customTripDays: false,
@@ -149,6 +159,8 @@ eco: 0,
     foret: false,
   },
 };
+
+
 
 function App() {
   const [history, setHistory] = useState(["start"]);
@@ -394,42 +406,92 @@ const handleContactBack = () => {
   goBack();
 };
 
-const handleRelaunchWithMaxBudget = (budgetPatch = null) => {
-  const travelers = Number(userAnswers.travelers) || 2;
-  const maxBudget = travelers * 10000 + 5000;
+function preserveInitialRelaunchValues(currentAnswers) {
+  return {
+    initialBudgetBeforeRelaunch:
+      currentAnswers.initialBudgetBeforeRelaunch ?? currentAnswers.budgetTotal,
 
-  const requestedBudget = Number(budgetPatch?.budgetTotal);
+    initialChalMinBeforeRelaunch:
+      currentAnswers.initialChalMinBeforeRelaunch ?? currentAnswers.chalMin,
 
-  const nextBudget = Number.isFinite(requestedBudget)
-    ? Math.max(500, Math.min(requestedBudget, maxBudget))
-    : maxBudget;
+    initialChalMaxBeforeRelaunch:
+      currentAnswers.initialChalMaxBeforeRelaunch ?? currentAnswers.chalMax,
 
-  const nextBudgetMaxSelected =
-    budgetPatch?.budgetMaxSelected === true || nextBudget >= maxBudget;
+    initialBudgetLogementBeforeRelaunch:
+      currentAnswers.initialBudgetLogementBeforeRelaunch ??
+      currentAnswers.budgetLogement,
 
-const nextAnswers = {
-  ...userAnswers,
-  budgetTotal: nextBudgetMaxSelected ? maxBudget : nextBudget,
-  budgetMaxSelected: nextBudgetMaxSelected,
-  budgetManuallyEdited: true,
-  usedFinalBudgetRelaunch: true,
-};
+    initialBudgetFoodBeforeRelaunch:
+      currentAnswers.initialBudgetFoodBeforeRelaunch ??
+      currentAnswers.budgetFood,
 
-  setUserAnswers(nextAnswers);
-  setResults(calculateResults(nextAnswers, destinations));
-};
-
-const handleRelaunchWithoutHeat = () => {
-  const nextAnswers = {
-    ...userAnswers,
-    chal: 0,
-    chalMin: null,
-    chalMax: null,
+    initialBudgetActiviteBeforeRelaunch:
+      currentAnswers.initialBudgetActiviteBeforeRelaunch ??
+      currentAnswers.budgetActivite,
   };
+}
 
-  setUserAnswers(nextAnswers);
-  setResults(calculateResults(nextAnswers, destinations));
-};
+function getMaxBudget(travelers = 2) {
+  const safeTravelers = Number(travelers) || 2;
+  return safeTravelers * 10000 + 5000;
+}
+
+function handleRelaunchWithMaxBudget() {
+  setUserAnswers((currentAnswers) => {
+    const shouldApplyStrictMinimum =
+      Number(currentAnswers.budgetLogement) !== 1 ||
+      Number(currentAnswers.budgetFood) !== 1 ||
+      Number(currentAnswers.budgetActivite) !== 1;
+
+    const nextAnswers = {
+      ...currentAnswers,
+
+      ...preserveInitialRelaunchValues(currentAnswers),
+
+      usedFinalBudgetRelaunch: true,
+
+      // Ton budget "illimité" ou budget max final
+      budgetTotal: getMaxBudget(currentAnswers.travelers),
+
+      ...(shouldApplyStrictMinimum
+        ? {
+            usedStrictMinBudgetRelaunch: true,
+            budgetLogement: 1,
+            budgetFood: 1,
+            budgetActivite: 1,
+          }
+        : {}),
+    };
+
+    const nextResults = calculateResults(nextAnswers, destinations);
+
+    setResults(nextResults);
+
+    return nextAnswers;
+  });
+}
+
+function handleRelaunchWithoutHeat() {
+  setUserAnswers((currentAnswers) => {
+    const nextAnswers = {
+      ...currentAnswers,
+
+      ...preserveInitialRelaunchValues(currentAnswers),
+
+      usedFinalHeatRelaunch: true,
+
+      chal: 0,
+      chalMin: null,
+      chalMax: null,
+    };
+
+    const nextResults = calculateResults(nextAnswers, destinations);
+
+    setResults(nextResults);
+
+    return nextAnswers;
+  });
+}
 
 const getThemeLabel = (theme) => {
   return (
