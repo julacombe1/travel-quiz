@@ -37,6 +37,14 @@ const MONTH_KEYS = [
 ];
 
 const AVENTURE_LABELS = {
+0: "AUCUN DES DEUX",
+1: "FARNIENTE DE L’EXTRÊME",
+2: "FARNIENTE",
+3: "PLUS FARNIENTE",
+4: "LES DEUX !",
+5: "PLUS AVENTURIER",
+6: "AVENTURIER",
+7: "AVENTURIER DE L’EXTRÊME",
   fullAventure: "AVENTURIER DE L’EXTRÊME",
   fullAdventure: "AVENTURIER DE L’EXTRÊME",
   aventure: "AVENTURIER",
@@ -56,6 +64,14 @@ const AVENTURE_LABELS = {
 };
 
 const VILLE_ACTIVITE_LABELS = {
+0: "AUCUN DES DEUX",
+1: "ACTIVITÉS DE L’EXTRÊME",
+2: "ACTIVITÉS",
+3: "PLUS ACTIVITÉS",
+4: "LES DEUX !",
+5: "PLUS VILLE",
+6: "VILLE",
+7: "100 % CITADIN",    
   fullVille: "100 % CITADIN",
   fullCity: "100 % CITADIN",
   ville: "VILLE",
@@ -344,7 +360,11 @@ function formatMoney(value) {
   if (!Number.isFinite(number)) return "Non renseigné";
   return `${Math.round(number).toLocaleString("fr-FR")} €`;
 }
-
+function formatMoneyNoWrapHtml(value) {
+  return `<span style="white-space:nowrap; display:inline-block;">${escapeHtml(
+    formatMoney(value)
+  ).replace(/\s/g, "&nbsp;")}</span>`;
+}
 function formatNumber(value, suffix = "") {
   const number = Number(value);
   if (!Number.isFinite(number)) return "";
@@ -771,6 +791,7 @@ function formatDuelPreferences(userAnswers = {}) {
   const adventureValue = pickFirstValue(userAnswers, [
     "profile1",
     "_profile1",
+    "aventure",
     "aventureFarniente",
     "adventureRelax",
   ]);
@@ -778,25 +799,26 @@ function formatDuelPreferences(userAnswers = {}) {
   const villeValue = pickFirstValue(userAnswers, [
     "profile2",
     "_profile2",
+    "ville",
     "villeActivite",
     "cityActivity",
   ]);
 
-  const rows = [
-    adventureValue
-      ? [
-          "Duel aventure / farniente",
-          getChoiceLabel(adventureValue, AVENTURE_LABELS),
-        ]
-      : null,
+  const rows = [];
 
-    villeValue
-      ? [
-          "Duel ville / activités",
-          getChoiceLabel(villeValue, VILLE_ACTIVITE_LABELS),
-        ]
-      : null,
-  ].filter(Boolean);
+  if (hasValue(adventureValue)) {
+    rows.push([
+      "Duel aventure / farniente",
+      getChoiceLabel(adventureValue, AVENTURE_LABELS),
+    ]);
+  }
+
+  if (hasValue(villeValue)) {
+    rows.push([
+      "Duel ville / activités",
+      getChoiceLabel(villeValue, VILLE_ACTIVITE_LABELS),
+    ]);
+  }
 
   if (!rows.length) return "";
 
@@ -1114,17 +1136,17 @@ function formatBudgetBreakdown(budgetBreakdown) {
               : "padding:9px 8px; border-bottom:1px solid #eee; color:#6c5b75;";
 
 const valueStyle = isTotal
-  ? "padding:12px 8px; border-top:2px solid #eadcf4; text-align:right; font-size:18px; font-weight:bold; color:#8d45b5;"
-  : "padding:9px 8px; border-bottom:1px solid #eee; text-align:right; font-weight:800; color:#2f2440;";
+  ? "padding:12px 8px; border-top:2px solid #eadcf4; text-align:right; font-size:16px; font-weight:bold; color:#8d45b5; white-space:nowrap;"
+  : "padding:9px 8px; border-bottom:1px solid #eee; text-align:right; font-weight:800; color:#2f2440; white-space:nowrap;";
 
             return `
               <tr>
                 <td style="${labelStyle}">
                   ${escapeHtml(label)}
                 </td>
-                <td style="${valueStyle}">
-                  ${escapeHtml(formatMoney(value))}
-                </td>
+<td style="${valueStyle}">
+  ${formatMoneyNoWrapHtml(value)}
+</td>
               </tr>
             `;
           })
