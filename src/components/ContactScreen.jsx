@@ -549,9 +549,9 @@ try {
           )}
 
           <footer className="contact-actions">
-            <button type="button" className="contact-back-btn" onClick={onBack}>
-              BACK
-            </button>
+            <button type="button" className="app-btn back contact-back-btn" onClick={onBack}>
+  BACK
+</button>
 
 <button
   type="submit"

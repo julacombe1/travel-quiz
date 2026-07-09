@@ -193,50 +193,54 @@
   font-weight: 1000;
   color: #3b2519;
 }
+/* ========================= */
+/* ACTIONS ÉCRAN PLAN TRIP */
+/* ========================= */
+
 .plan-trip-actions {
-  position: fixed;
-  left: 50%;
-  bottom: max(8px, env(safe-area-inset-bottom));
-  transform: translateX(-50%);
+  display: grid;
+  grid-template-columns: 96px 1fr 1fr;
+  gap: 8px;
 
-  z-index: 1000;
+  width: 100%;
+  max-width: 520px;
 
-  width: min(540px, calc(100vw - 8px));
-  padding: 6px;
-
-  display: grid !important;
-  grid-template-columns: 68px minmax(0, 1fr) minmax(0, 1fr);
-  gap: 5px;
-  align-items: stretch;
-
-  border-radius: 18px;
-  background: rgba(255, 248, 239, 0.96);
-  border: 1px solid rgba(120, 80, 35, 0.14);
-  box-shadow: 0 8px 24px rgba(40, 25, 12, 0.22);
-  backdrop-filter: blur(8px);
+  margin: 16px auto 0;
+  padding: 0 8px;
 
   box-sizing: border-box;
+  align-items: stretch;
 }
 
-.plan-trip-actions > .app-btn {
+.plan-trip-actions .app-btn {
   width: 100%;
   min-width: 0;
-  max-width: none;
-
   min-height: 58px;
-  padding: 7px 4px;
 
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding-left: 8px;
+  padding-right: 8px;
 
-  box-sizing: border-box;
-  overflow: hidden;
-}
-
-.plan-trip-actions > .app-btn.back {
   font-size: 13px;
+  line-height: 1.08;
 }
+
+.plan-trip-actions .app-btn.back {
+  width: 96px;
+  min-width: 96px;
+  max-width: 96px;
+
+  font-size: 16px;
+}
+
+.plan-trip-actions .plan-trip-interest-btn {
+  font-size: 12.5px;
+  white-space: normal;
+}
+
+.plan-trip-actions .secondary-interest {
+  font-size: 12px;
+}
+
 
 .plan-trip-interest-btn {
   flex-direction: column;
@@ -425,5 +429,23 @@
   .plan-trip-popup-actions {
     grid-template-columns: 78px minmax(0, 1fr);
     gap: 8px;
+  }
+}
+@media (max-width: 380px) {
+  .plan-trip-actions {
+    grid-template-columns: 86px 1fr 1fr;
+    gap: 6px;
+    padding: 0 6px;
+  }
+
+  .plan-trip-actions .app-btn.back {
+    width: 86px;
+    min-width: 86px;
+    max-width: 86px;
+    font-size: 15px;
+  }
+
+  .plan-trip-actions .plan-trip-interest-btn {
+    font-size: 11px;
   }
 }

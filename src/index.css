@@ -626,3 +626,40 @@ button {
   font-size: 18px;
   font-weight: 950;
 }
+
+/* ========================= */
+/* ACTIONS ÉCRAN RÉSULTATS */
+/* ========================= */
+
+.app-actions.grid-4.results-actions {
+  grid-template-columns: 1.1fr 1.1fr 1.2fr 1.5fr;
+  gap: 7px;
+  max-width: 540px;
+}
+
+.app-actions.grid-4.results-actions .app-btn {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.app-actions.grid-4.results-actions .app-btn.back,
+.app-actions.grid-4.results-actions .app-btn.dark:first-of-type {
+  font-size: 12.5px;
+}
+
+@media (max-width: 380px) {
+  .app-actions.grid-4.results-actions {
+    grid-template-columns: 1.08fr 1.08fr 1.16fr 1.46fr;
+    gap: 5px;
+  }
+
+  .app-actions.grid-4.results-actions .app-btn {
+    font-size: 11px;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  .app-actions.grid-4.results-actions .app-btn.main {
+    font-size: 11px;
+  }
+}

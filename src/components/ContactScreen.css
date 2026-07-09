@@ -386,6 +386,14 @@
   background: linear-gradient(135deg, #8d45b5, #d94b8c);
 }
 
+.contact-actions .app-btn.back {
+  flex: 0 0 96px;
+  min-width: 96px;
+  max-width: 96px;
+  min-height: 58px;
+  font-size: 18px;
+}
+
 @keyframes contactPopupIn {
   from {
     opacity: 0;

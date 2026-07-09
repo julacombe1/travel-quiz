@@ -1471,7 +1471,7 @@ const cleanBudgetAdvice = getCleanBudgetAdvice(userAnswers);
       </section>
 
 {!showTop10 && !infoPopup && (
-  <div className="app-actions grid-4 sticky-bottom">
+  <div className="app-actions grid-4 results-actions sticky-bottom">
     <button type="button" className="app-btn back" onClick={onBack}>
       BACK
     </button>
@@ -1493,29 +1493,42 @@ const cleanBudgetAdvice = getCleanBudgetAdvice(userAnswers);
       <span>TOP 10</span>
     </button>
 
-    <button
-      type="button"
-      className="app-btn gold two-lines main"
-onClick={() =>
-  onPlanTrip?.({
-    destination: res,
-    budgetBreakdown,
-    destinationRank: selectedIndex + 1,
-    selectedMonth,
-    exactDates,
-    travelPeriodLabel: periodCardInfo?.value || periodLabel,
-    travelPeriodType:
-      exactDates?.from || exactDates?.to
-        ? "exact"
-        : selectedMonth === "best"
-        ? "best"
-        : "fixed",
-  })
-}
-    >
-      <span>Planifie-moi</span>
-      <span>un voyage</span>
-    </button>
+ <button
+  type="button"
+  className="app-btn gold two-lines main"
+  onClick={() => {
+    const hasExactDates = exactDates?.from && exactDates?.to;
+
+    const finalTravelPeriodLabel = hasExactDates
+      ? ""
+      : selectedMonth === "best" && res.bestMonth
+      ? formatMonth(res.bestMonth)
+      : selectedMonth && selectedMonth !== "best"
+      ? formatMonth(selectedMonth)
+      : "";
+
+    const finalTravelPeriodType = hasExactDates
+      ? "exact"
+      : selectedMonth === "best"
+      ? "best"
+      : "fixed";
+
+    onPlanTrip?.({
+      destination: res,
+      budgetBreakdown,
+      destinationRank: selectedIndex + 1,
+
+      selectedMonth,
+      exactDates,
+
+      travelPeriodLabel: finalTravelPeriodLabel,
+      travelPeriodType: finalTravelPeriodType,
+    });
+  }}
+>
+  <span>Planifie-moi</span>
+  <span>un voyage</span>
+</button>
   </div>
 )}
       {showTop10 && (

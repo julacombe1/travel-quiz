@@ -184,16 +184,16 @@ const handleCancelDates = () => {
   });
 };
 
-  const handleConfirmDates = () => {
-    if (!range?.from || !range?.to) return;
+const handleConfirmDates = () => {
+  if (!range?.from || !range?.to) return;
 
+  launchCalculation(() => {
     onExactDatesValidate?.({
       from: range.from,
       to: range.to,
     });
-
-    setShowCalendar(false);
-  };
+  });
+};
 
 const handleOk = () => {
   if (range?.from && range?.to) {
@@ -300,9 +300,14 @@ const handleOk = () => {
     </span>
   </button>
 
-  <button type="button" className="app-btn ok date-side-btn" onClick={handleOk}>
-    OK
-  </button>
+<button
+  type="button"
+  className="app-btn ok date-side-btn"
+  onClick={handleOk}
+  disabled={isLoading}
+>
+  {isLoading ? "..." : "OK"}
+</button>
 </div>
 
 
@@ -325,13 +330,13 @@ const handleOk = () => {
               Annuler
             </button>
 
-            <button
-              className="calendar-validate"
-              disabled={!range?.from || !range?.to}
-              onClick={handleConfirmDates}
-            >
-              Valider les dates
-            </button>
+<button
+  className="calendar-validate"
+  disabled={!range?.from || !range?.to || isLoading}
+  onClick={handleConfirmDates}
+>
+  {isLoading ? "CALCUL..." : "Valider les dates"}
+</button>
           </div>
         </div>
       )}

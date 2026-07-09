@@ -74,18 +74,30 @@ export default function PlanTripScreen({
 
   const cleanTravelPeriodLabel = travelPeriodLabel || "";
 
-  const travelPeriodText =
-    cleanTravelPeriodLabel && travelPeriodType === "best"
-      ? `${cleanTravelPeriodLabel} — meilleur mois calculé`
-      : cleanTravelPeriodLabel && travelPeriodType === "fixed"
-      ? `${cleanTravelPeriodLabel} — mois choisi`
-      : cleanTravelPeriodLabel;
+  function formatPlanDateFr(value) {
+    if (!value) return "";
 
-  const buttonPeriodText =
-    cleanTravelPeriodLabel &&
-    (travelPeriodType === "best" || travelPeriodType === "fixed")
-      ? ` en ${cleanTravelPeriodLabel}`
-      : "";
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return String(value);
+    }
+
+    return date.toLocaleDateString("fr-FR");
+  }
+
+  const hasExactDates = exactDates?.from || exactDates?.to;
+
+const planTripPeriodSuffix = hasExactDates
+  ? ` entre le ${formatPlanDateFr(exactDates.from)} et le ${formatPlanDateFr(
+      exactDates.to
+    )}`
+  : selectedMonth === "best" && cleanTravelPeriodLabel
+  ? ` en ${cleanTravelPeriodLabel}`
+  : selectedMonth && selectedMonth !== "best"
+  ? ` en ${selectedMonth}`
+  : "";
+
 
   const openRequestForDestination = (
     name,
@@ -137,28 +149,7 @@ export default function PlanTripScreen({
 
     openRequestForDestination(cleanDestinationName, true);
   };
-function formatPlanDateFr(value) {
-  if (!value) return "";
 
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return String(value);
-  }
-
-  return date.toLocaleDateString("fr-FR");
-}
-
-const hasExactDates = exactDates?.from || exactDates?.to;
-
-const planTripPeriodSuffix = hasExactDates
-  ? ` entre le ${formatPlanDateFr(exactDates.from)} et le ${formatPlanDateFr(
-      exactDates.to
-    )}`
-  : cleanTravelPeriodLabel
-  ? ` en ${cleanTravelPeriodLabel}`
-  : "";
-  
   return (
     <div className="plan-trip-screen">
       <div className="plan-trip-overlay">
@@ -169,11 +160,11 @@ const planTripPeriodSuffix = hasExactDates
 
           <p className="plan-trip-kicker">Terre d&apos;Aur Travel Planner</p>
 
-          <h3>
+          <h1>
             Ton voyage sur-mesure,
             <br />
             sans le stress de l&apos;organisation !
-          </h3>
+          </h1>
 
 <p className="plan-trip-destination">
   Projet pour :{" "}
@@ -194,7 +185,7 @@ const planTripPeriodSuffix = hasExactDates
               <strong>Important à savoir :</strong> Sa mission est de te
               conseiller et te guider pas à pas. Elle crée ton itinéraire
               idéal et sélectionne les meilleurs prestataires, mais ce n&apos;est
-              pas une agence. C&apos;est toi qui réservez en direct via ses
+              pas une agence. C&apos;est toi qui réserve en direct via ses
               liens : elle t&apos; aide à réaliser le projet, mais sa responsabilité
               s&apos;arrête là et ne s&apos;applique pas pendant le voyage.
             </p>
@@ -222,7 +213,7 @@ const planTripPeriodSuffix = hasExactDates
             <h2>Prêt à concrétiser ce projet ?</h2>
 
             <p>
-              La rémunération de votre Travel Planner pour toutes ses recherches
+              La rémunération de ton Travel Planner pour toutes ses recherches
               est déjà incluse et transparente dans le budget ci-dessus.
             </p>
 
@@ -239,9 +230,9 @@ const planTripPeriodSuffix = hasExactDates
     BACK
   </button>
 
-  <button
-    type="button"
-    className="app-btn gold plan-trip-interest-btn"
+<button
+  type="button"
+  className="app-btn gold plan-trip-interest-btn"
   onClick={() =>
     onInterested?.({
       destination,
@@ -255,7 +246,7 @@ const planTripPeriodSuffix = hasExactDates
   }
 >
   Ça m’intéresse pour {destinationName}
-  {buttonPeriodText}
+  {planTripPeriodSuffix}
 </button>
 
   <button
