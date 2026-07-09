@@ -1264,8 +1264,16 @@ const topResultsCount = topResults.length;
     exactDates
   );
 
-const showInsoTemp = Number(userAnswers?.inso) > 0;
-const showMerTemp = Number(userAnswers?.mer) > 0;
+const insoScore = Number(res?.scores?.inso) || 0;
+const merScore = Number(res?.scores?.mer) || 0;
+const bainScore = Number(res?.scores?.bain) || 0;
+
+const showInsoTemp =
+  Number(userAnswers?.inso) > 0 && insoScore > 0;
+
+const showMerTemp =
+  (Number(userAnswers?.mer) > 0 && merScore > 0) ||
+  (Number(userAnswers?.bain) > 0 && bainScore > 0);
 
 // Chaleur toujours affichée sur le nouvel écran.
 const heatTemp = getDisplayedTemperature(
