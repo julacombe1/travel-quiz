@@ -1244,7 +1244,9 @@ if (!Array.isArray(results) || results.length === 0) {
   );
 }
 
-  const top10Results = results.slice(0, 10);
+const positiveResults = results.filter((item) => Number(item?.score) > 0);
+const topResults = positiveResults.slice(0, 10);
+const topResultsCount = topResults.length;
   const res = results[selectedIndex] ?? results[0];
 
   const periodLabel = getPeriodLabel(selectedMonth, exactDates, res);
@@ -1484,14 +1486,14 @@ const cleanBudgetAdvice = getCleanBudgetAdvice(userAnswers);
       Rejouer
     </button>
 
-    <button
-      type="button"
-      className="app-btn dark two-lines"
-      onClick={() => setShowTop10(true)}
-    >
-      <span>Voir mon</span>
-      <span>TOP 10</span>
-    </button>
+<button
+  type="button"
+  className="app-btn dark two-lines"
+  onClick={() => setShowTop10(true)}
+>
+  <span>Voir mon</span>
+  <span>TOP {topResultsCount}</span>
+</button>
 
  <button
   type="button"
@@ -1534,10 +1536,10 @@ const cleanBudgetAdvice = getCleanBudgetAdvice(userAnswers);
       {showTop10 && (
         <div className="new-results-modal-backdrop">
           <div className="new-results-modal top10-modal">
-            <h2>Ton TOP 10</h2>
+            <h2>Ton TOP {topResultsCount}</h2>
 
             <div className="top10-list">
-              {top10Results.map((item, index) => {
+              {topResults.map((item, index) => {
                 const itemBudgetBreakdown = getDisplayBudgetBreakdown(
                   item,
                   userAnswers,
@@ -1551,10 +1553,15 @@ const cleanBudgetAdvice = getCleanBudgetAdvice(userAnswers);
                     className={`top10-item ${
                       selectedIndex === index ? "active" : ""
                     }`}
-                    onClick={() => {
-                      setSelectedIndex(index);
-                      setShowTop10(false);
-                    }}
+ onClick={() => {
+  const realIndex = results.findIndex((result) => result === item);
+
+  if (realIndex !== -1) {
+    setSelectedIndex(realIndex);
+  }
+
+  setShowTop10(false);
+}}
                   >
                     <div>
                       <strong>

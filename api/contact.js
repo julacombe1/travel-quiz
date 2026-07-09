@@ -37,25 +37,42 @@ const MONTH_KEYS = [
 ];
 
 const AVENTURE_LABELS = {
-  7: "Full aventure",
-  6: "Aventure",
-  5: "Plus aventure",
-  4: "Mixte",
-  3: "Plus farniente",
-  2: "Farniente",
-  1: "Full farniente",
-  0: "Aucun des deux",
+  fullAventure: "AVENTURIER DE L’EXTRÊME",
+  fullAdventure: "AVENTURIER DE L’EXTRÊME",
+  aventure: "AVENTURIER",
+  adventure: "AVENTURIER",
+  aventureMore: "PLUS AVENTURIER",
+  adventureMore: "PLUS AVENTURIER",
+  mixed: "LES DEUX !",
+  lesDeux: "LES DEUX !",
+  neutral: "AUCUN DES DEUX",
+  none: "AUCUN DES DEUX",
+  farnienteMore: "PLUS FARNIENTE",
+  relaxMore: "PLUS FARNIENTE",
+  farniente: "FARNIENTE",
+  relax: "FARNIENTE",
+  fullFarniente: "FARNIENTE DE L’EXTRÊME",
+  fullRelax: "FARNIENTE DE L’EXTRÊME",
 };
 
-const VILLE_LABELS = {
-  7: "Full ville",
-  6: "Ville",
-  5: "Plus ville",
-  4: "Mixte",
-  3: "Plus activité",
-  2: "Activité",
-  1: "Full activité",
-  0: "Aucun des deux",
+const VILLE_ACTIVITE_LABELS = {
+  fullVille: "100 % CITADIN",
+  fullCity: "100 % CITADIN",
+  ville: "VILLE",
+  city: "VILLE",
+  villeMore: "PLUS VILLE",
+  cityMore: "PLUS VILLE",
+  mixed: "LES DEUX !",
+  mixed2: "LES DEUX !",
+  lesDeux: "LES DEUX !",
+  neutral: "AUCUN DES DEUX",
+  none: "AUCUN DES DEUX",
+  activiteMore: "PLUS ACTIVITÉS",
+  activityMore: "PLUS ACTIVITÉS",
+  activite: "ACTIVITÉS",
+  activity: "ACTIVITÉS",
+  fullActivite: "ACTIVITÉS DE L’EXTRÊME",
+  fullActivity: "ACTIVITÉS DE L’EXTRÊME",
 };
 
 const THEMES_GROUPS = [
@@ -231,6 +248,51 @@ const COMMENT_CONFIG = [
   { key: "eco", label: "Eco-tourisme", icon: "🌱" },
 ];
 
+const TREK_LEVELS = {
+  1: "1 grosse journée",
+  2: "2/3 jours",
+  3: "4/5 jours",
+  4: "6/7 jours",
+  5: "plus d'une semaine",
+};
+
+function getThemeDisplayValue(theme, score, userAnswers = {}) {
+  if (theme.key !== "trek") {
+    return `${score}/${theme.max}`;
+  }
+
+  const trekLevel = Number(
+    userAnswers?.trekLevel ||
+      userAnswers?.trekDuration ||
+      userAnswers?.trek
+  );
+
+  const trekLabel = TREK_LEVELS[trekLevel];
+
+  if (!trekLabel) {
+    return `${score}/${theme.max}`;
+  }
+
+  return `${score}/${theme.max} — ${trekLabel}`;
+}
+
+
+function getChoiceLabel(value, labelsMap) {
+  if (!hasValue(value)) return "";
+
+  const key = String(value).trim();
+
+  return labelsMap[key] || key;
+}
+
+function pickFirstValue(source = {}, keys = []) {
+  for (const key of keys) {
+    if (hasValue(source[key])) return source[key];
+  }
+
+  return "";
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -320,16 +382,48 @@ function getContactModeLabel(mode) {
   return labels[mode] || mode || "";
 }
 
-function compactRow(label, value) {
+function compactRow(label, value, options = {}) {
   if (!hasValue(value)) return "";
 
-  const displayValue = Array.isArray(value) ? value.join(", ") : value;
+  const rowClass = options.highlight ? " important-row" : "";
+  const valueClass = options.highlight ? " important-value" : "";
+  const valueHtml = options.rawHtml ? value : escapeHtml(value);
 
   return `
-    <tr>
+    <tr class="mini-row${rowClass}">
       <td class="mini-label">${escapeHtml(label)}</td>
-      <td class="mini-value">${escapeHtml(displayValue)}</td>
+      <td class="mini-value${valueClass}">${valueHtml}</td>
     </tr>
+  `;
+}
+
+function formatPhoneLink(value) {
+  if (!hasValue(value)) return "";
+
+  const cleanPhone = String(value).replace(/[^\d+]/g, "");
+
+  if (!cleanPhone) {
+    return escapeHtml(value);
+  }
+
+  return `<a class="phone-link" href="tel:${escapeHtml(cleanPhone)}">${escapeHtml(
+    value
+  )}</a>`;
+}
+
+function formatPeriodHtml(periodLabel) {
+  if (!hasValue(periodLabel)) return "";
+
+  const text = String(periodLabel);
+  const match = text.match(/^(.*?)\s*(\(.+\))$/);
+
+  if (!match) {
+    return `<span class="period-main">${escapeHtml(text)}</span>`;
+  }
+
+  return `
+    <span class="period-main">${escapeHtml(match[1].trim())}</span>
+    <span class="period-note">${escapeHtml(match[2])}</span>
   `;
 }
 
@@ -338,8 +432,14 @@ function formatContactTable(contact = {}) {
     compactRow("Mode de contact", getContactModeLabel(contact.contactMode)),
     compactRow("Prénom", contact.firstName),
     compactRow("Nom", contact.lastName),
-    compactRow("Téléphone", contact.phone),
-    compactRow("WhatsApp", contact.whatsapp),
+    compactRow("Téléphone", formatPhoneLink(contact.phone), {
+  rawHtml: true,
+  highlight: true,
+}),
+compactRow("WhatsApp", formatPhoneLink(contact.whatsapp), {
+  rawHtml: true,
+  highlight: true,
+}),
     compactRow("Email", contact.email),
     compactRow("Jours préférés", contact.preferredDays),
     compactRow("Plage horaire préférée", contact.preferredTimeSlot),
@@ -559,18 +659,41 @@ function formatRelaunchInfo(userAnswers = {}) {
 }
 
 
-function formatSummaryTable(userAnswers = {}, budgetBreakdown = {}, request = {}, destinationName = "") {
+function formatSummaryTable(
+  userAnswers = {},
+  budgetBreakdown = {},
+  request = {},
+  destinationName = ""
+) {
   const estimatedBudget = getBudgetValue(budgetBreakdown, ["total"]);
   const periodLabel = getTravelPeriodLabel(userAnswers, request);
   const rankLabel = getDestinationRankLabel(request?.destinationRank);
 
   const rows = [
-    ["Destination", destinationName],
-    ["Voyageurs", userAnswers.travelers || ""],
-    ["Durée", userAnswers.tripDays ? `${userAnswers.tripDays} jours` : ""],
-    ["Période", periodLabel],
+    ["Destination", destinationName, { highlight: true }],
+    [
+      "Voyageurs",
+      userAnswers.travelers ? `${userAnswers.travelers}` : "",
+      { highlight: true },
+    ],
+    [
+      "Durée",
+      userAnswers.tripDays ? `${userAnswers.tripDays} jours` : "",
+      { highlight: true },
+    ],
+    [
+      "Période",
+      formatPeriodHtml(periodLabel),
+      { rawHtml: true, highlight: true },
+    ],
     ["Budget renseigné", formatMoney(userAnswers.budgetTotal)],
-    ["Budget estimé", formatMoney(estimatedBudget)],
+    [
+      "Budget total estimé par l'application",
+      `<span class="total-budget-value">${escapeHtml(
+        formatMoney(estimatedBudget)
+      )}</span>`,
+      { rawHtml: true, highlight: true },
+    ],
     rankLabel ? ["Position au classement", rankLabel] : null,
   ].filter(Boolean);
 
@@ -579,40 +702,64 @@ function formatSummaryTable(userAnswers = {}, budgetBreakdown = {}, request = {}
       <h2 class="summary-card-title">Résumé du voyage</h2>
 
       <table class="mini-table summary-table">
-        ${rows.map(([label, value]) => compactRow(label, value)).join("")}
+        ${rows
+          .map(([label, value, options]) => compactRow(label, value, options))
+          .join("")}
       </table>
     </div>
   `;
 }
 
 function formatDuelPreferences(userAnswers = {}) {
-  const rows = [];
+  const adventureValue = pickFirstValue(userAnswers, [
+    "profile1",
+    "_profile1",
+    "aventureFarniente",
+    "adventureRelax",
+  ]);
 
-  const aventureValue = Number(userAnswers.aventure);
-  const villeValue = Number(userAnswers.ville);
+  const villeValue = pickFirstValue(userAnswers, [
+    "profile2",
+    "_profile2",
+    "villeActivite",
+    "cityActivity",
+  ]);
 
-  if (Number.isFinite(aventureValue)) {
-    rows.push([
-      "Duel Aventure / Farniente",
-      AVENTURE_LABELS[aventureValue] ?? aventureValue,
-    ]);
-  }
+  const rows = [
+    adventureValue
+      ? [
+          "Duel aventure / farniente",
+          getChoiceLabel(adventureValue, AVENTURE_LABELS),
+        ]
+      : null,
 
-  if (Number.isFinite(villeValue)) {
-    rows.push([
-      "Duel Ville / Activité",
-      VILLE_LABELS[villeValue] ?? villeValue,
-    ]);
-  }
+    villeValue
+      ? [
+          "Duel ville / activités",
+          getChoiceLabel(villeValue, VILLE_ACTIVITE_LABELS),
+        ]
+      : null,
+  ].filter(Boolean);
 
   if (!rows.length) return "";
 
   return `
-    <h2 class="section-title">Profil général</h2>
+    <h2 class="section-title">Préférences principales</h2>
     <table class="mini-table">
       ${rows.map(([label, value]) => compactRow(label, value)).join("")}
     </table>
   `;
+}
+
+function isChecked(value) {
+  return (
+    value === true ||
+    value === 1 ||
+    value === "1" ||
+    value === "true" ||
+    value === "oui" ||
+    value === "yes"
+  );
 }
 
 function formatBudgetPreferences(userAnswers = {}) {
@@ -654,19 +801,32 @@ function isDefaultTransportModes(modes = {}) {
 
 function getSelectedTransportModes(userAnswers = {}) {
   const modes = userAnswers.transportModes || {};
+
+  if (isChecked(modes.indifferent)) {
+    return [];
+  }
+
   const labels = [];
 
-  if (modes.voiture) {
+  if (isChecked(modes.voiture)) {
     labels.push(
-      userAnswers?.avion === "non"
+      userAnswers.avion === "non"
         ? "Voiture personnelle"
         : "Voiture de location"
     );
   }
 
-  if (modes.commun) labels.push("Transports en commun");
-  if (modes.taxi) labels.push("Taxi");
-  if (modes.vtc) labels.push("VTC");
+  if (isChecked(modes.commun)) {
+    labels.push("Transports en commun");
+  }
+
+  if (isChecked(modes.taxi)) {
+    labels.push("Taxi");
+  }
+
+  if (isChecked(modes.vtc)) {
+    labels.push("VTC");
+  }
 
   return labels;
 }
@@ -791,28 +951,16 @@ function formatClimateSecurityRelief(userAnswers = {}) {
     ]);
   }
 
-  const waterRange = formatRange(userAnswers.teauMin, userAnswers.teauMax);
+const waterRange = formatRange(userAnswers.teauMin, userAnswers.teauMax);
 
-  const selectedWaterThemes = [];
+const hasWaterTheme =
+  Number(userAnswers.mer) > 0 ||
+  Number(userAnswers.bain) > 0 ||
+  Number(userAnswers.inso) > 0;
 
-  if (Number(userAnswers.mer) > 0) {
-    selectedWaterThemes.push(`Baignade mer ${userAnswers.mer}/5`);
-  }
-
-  if (Number(userAnswers.bain) > 0) {
-    selectedWaterThemes.push(`Baignade ${userAnswers.bain}/5`);
-  }
-
-  if (Number(userAnswers.inso) > 0) {
-    selectedWaterThemes.push(`Baignade insolite ${userAnswers.inso}/5`);
-  }
-
-  if (waterRange && selectedWaterThemes.length) {
-    rows.push([
-      "Température de l’eau souhaitée",
-      `${waterRange} — ${selectedWaterThemes.join(", ")}`,
-    ]);
-  }
+if (waterRange && hasWaterTheme) {
+  rows.push(["Température de l’eau souhaitée", waterRange]);
+}
 
   if (Number(userAnswers.secu) > 0) {
     rows.push(["Sécurité", `${userAnswers.secu}/5`]);
@@ -835,7 +983,10 @@ function formatThemeGroup(group, userAnswers = {}) {
 
       if (!Number.isFinite(score) || score <= 0) return "";
 
-      return compactRow(theme.label, `${score}/${theme.max}`);
+      return compactRow(
+        theme.label,
+        getThemeDisplayValue(theme, score, userAnswers)
+      );
     })
     .filter(Boolean)
     .join("");
@@ -1231,6 +1382,43 @@ function buildEmailHtml(payload, orderId) {
   font-weight: 800;
   color: #2f2440;
 }  
+  .important-row .mini-label {
+  font-weight: 800;
+  color: #5b2b72;
+}
+
+.important-value {
+  font-size: 15px;
+  font-weight: 900;
+  color: #2f2440;
+}
+
+.total-budget-value {
+  display: inline-block;
+  font-size: 20px;
+  font-weight: 950;
+  color: #8d45b5;
+}
+
+.phone-link {
+  color: #8d45b5;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.period-main {
+  font-size: 15px;
+  font-weight: 900;
+  color: #2f2440;
+}
+
+.period-note {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #7a6a85;
+}
       </style>
 
       <div style="max-width:760px; margin:0 auto; background:white; border-radius:18px; padding:20px;">
