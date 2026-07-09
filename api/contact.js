@@ -364,6 +364,19 @@ function getParisOrderId() {
   return `TP-${get("year")}${get("month")}${get("day")}-${get("hour")}${get("minute")}${get("second")}-${get("fractionalSecond")}`;
 }
 
+function hasCommentValue(value) {
+  if (!hasValue(value)) return false;
+
+  const cleanValue = String(value).trim();
+
+  if (cleanValue === "0") return false;
+  if (cleanValue.toLowerCase() === "n/a") return false;
+  if (cleanValue.toLowerCase() === "#n/a") return false;
+  if (cleanValue === "-") return false;
+
+  return true;
+}
+
 function formatMoney(value) {
   const number = Number(value);
   if (!Number.isFinite(number)) return "Non renseigné";
@@ -1638,7 +1651,7 @@ function formatDisplayedComments({ request, userAnswers }) {
         userAnswers
       );
 
-      if (!hasValue(comment)) return "";
+      if (!hasCommentValue(comment)) return "";
 
       return `
         <tr>
