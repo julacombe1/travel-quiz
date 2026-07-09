@@ -245,6 +245,11 @@ const COMMENT_CONFIG = [
   { key: "aerien", label: "Évasion aérienne", icon: "🚁" },
   { key: "extreme", label: "Frissons aériens", icon: "🪂" },
   { key: "esca", label: "Escalade", icon: "🧗" },
+{ key: "transportModes_voiture", label: "Voiture", icon: "🚗" },
+{ key: "transportModes_commun", label: "Transports en commun", icon: "🚆" },
+{ key: "transportModes_taxi", label: "Taxi", icon: "🚕" },
+{ key: "transportModes_vtc", label: "VTC", icon: "🚖" },
+{ key: "admin", label: "Papiers", icon: "🛂" },  
   { key: "streetfood", label: "Street Food", icon: "🥙" },
   { key: "stvege", label: "Street Food végé", icon: "🥦" },
   { key: "cuisineloc", label: "Cuisine locale", icon: "🍲" },
@@ -641,7 +646,35 @@ function formatDateFr(value) {
     return String(value);
   }
 
-  return date.toLocaleDateString("fr-FR");
+  return new Intl.DateTimeFormat("fr-FR", {
+    timeZone: "Europe/Paris",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date);
+}
+
+function getTripDaysForMail(userAnswers = {}, request = {}) {
+  const exactDates =
+    userAnswers?.exactDates ||
+    request?.exactDates ||
+    request?.travelDates ||
+    {};
+
+  const from = exactDates?.from;
+  const to = exactDates?.to;
+
+  if (from && to) {
+    const start = new Date(from);
+    const end = new Date(to);
+
+    if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {
+      const diffMs = end.getTime() - start.getTime();
+      return Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+    }
+  }
+
+  return Number(userAnswers?.tripDays) || "";
 }
 
 function getBestMonthFromRequest(request = {}) {
@@ -815,7 +848,7 @@ function formatSummaryTable(
   const estimatedBudget = getBudgetValue(budgetBreakdown, ["total"]);
   const periodLabel = getTravelPeriodLabel(userAnswers, request);
   const rankLabel = getDestinationRankLabel(request?.destinationRank);
-
+const tripDays = getTripDaysForMail(userAnswers, request);
   const rows = [
     [
       "Destination",
@@ -835,15 +868,15 @@ function formatSummaryTable(
         valueBig: true,
       },
     ],
-    [
-      "Durée",
-      userAnswers.tripDays ? `${userAnswers.tripDays} jours` : "",
-      {
-        labelEmphasis: true,
-        valueEmphasis: true,
-        valueBig: true,
-      },
-    ],
+[
+  "Durée",
+  tripDays ? `${tripDays} jours` : "",
+  {
+    labelEmphasis: true,
+    valueEmphasis: true,
+    valueBig: true,
+  },
+],
     [
       "Période",
       formatPeriodHtml(periodLabel),
@@ -1293,6 +1326,8 @@ function getCommentFromDestination(destination = {}, key, userAnswers = {}) {
       `trek.${trekLevel}C`,
       `trek_${trekLevel}C`,
       `trek${trekLevel}C`,
+      "trekc",
+      "trekC",
     ];
 
     for (const trekKey of trekKeys) {
@@ -1532,6 +1567,38 @@ function isDisplayedCommentActive(item, userAnswers = {}) {
   return Number.isFinite(answerValue) && answerValue > 0;
 }
 
+
+function isDisplayedCommentActive(item, userAnswers = {}) {
+  const key = item.key;
+
+  if (key === "admin") {
+    const selectedPapers = getSelectedPapers(userAnswers);
+
+    return userAnswers.papiersEnabled === true || selectedPapers.length > 0;
+  }
+
+  if (key.startsWith("transportModes_")) {
+    const subKey = key.split("_")[1];
+    const modes = userAnswers.transportModes || {};
+
+    if (isModeActive(modes.indifferent)) return false;
+
+    if (subKey === "vtc") {
+      return isModeActive(modes.vtc);
+    }
+
+    if (subKey === "taxi") {
+      return isModeActive(modes.taxi) && !isModeActive(modes.vtc);
+    }
+
+    return isModeActive(modes[subKey]);
+  }
+
+  const answerValue = Number(userAnswers?.[key]);
+
+  return Number.isFinite(answerValue) && answerValue > 0;
+}
+
 function formatDisplayedComments({ request, userAnswers }) {
   if (request?.mode === "customDestination") {
     return "";
@@ -1582,6 +1649,7 @@ function formatDisplayedComments({ request, userAnswers }) {
     }
   `;
 }
+
 function buildEmailHtml(payload, orderId) {
   const { contact, request } = payload;
 
