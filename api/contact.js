@@ -154,6 +154,11 @@ const THEMES_GROUPS = [
       { key: "aerien", label: "Évasion aérienne", max: 3 },
       { key: "extreme", label: "Frissons aériens", max: 3 },
       { key: "esca", label: "Escalade", max: 3 },
+{ key: "transportModes_voiture", label: "Voiture", icon: "🚗" },
+{ key: "transportModes_commun", label: "Transports en commun", icon: "🚆" },
+{ key: "transportModes_taxi", label: "Taxi", icon: "🚕" },
+{ key: "transportModes_vtc", label: "VTC", icon: "🚖" },
+{ key: "admin", label: "Papiers", icon: "🛂" },      
     ],
   },
   {
@@ -455,10 +460,43 @@ function formatPeriodHtml(periodLabel) {
   `;
 }
 
+function normalizePhoneForTel(value) {
+  if (!hasValue(value)) return "";
+
+  return String(value)
+    .trim()
+    .replace(/[^\d+]/g, "");
+}
+
+function normalizePhoneForWhatsapp(value) {
+  if (!hasValue(value)) return "";
+
+  const raw = String(value).trim();
+
+  // Si le numéro est déjà en +33..., on enlève juste le +
+  if (raw.startsWith("+")) {
+    return raw.replace(/[^\d]/g, "");
+  }
+
+  const digits = raw.replace(/\D/g, "");
+
+  // 0033... => 33...
+  if (digits.startsWith("00")) {
+    return digits.slice(2);
+  }
+
+  // Numéro français local : 0612345678 => 33612345678
+  if (digits.startsWith("0")) {
+    return `33${digits.slice(1)}`;
+  }
+
+  return digits;
+}
+
 function formatPhoneLink(value) {
   if (!hasValue(value)) return "";
 
-  const cleanPhone = String(value).replace(/[^\d+]/g, "");
+  const cleanPhone = normalizePhoneForTel(value);
 
   if (!cleanPhone) {
     return escapeHtml(value);
@@ -469,34 +507,101 @@ function formatPhoneLink(value) {
   )}</a>`;
 }
 
-function formatContactTable(contact = {}) {
-  const rows = [
-    compactRow("Mode de contact", getContactModeLabel(contact.contactMode)),
-    compactRow("Prénom", contact.firstName),
-    compactRow("Nom", contact.lastName),
-    compactRow("Téléphone", formatPhoneLink(contact.phone), {
-  rawHtml: true,
-  highlight: true,
-}),
-compactRow("WhatsApp", formatPhoneLink(contact.whatsapp), {
-  rawHtml: true,
-  highlight: true,
-}),
-    compactRow("Email", contact.email),
-    compactRow("Jours préférés", contact.preferredDays),
-    compactRow("Plage horaire préférée", contact.preferredTimeSlot),
-    compactRow("Commentaire", contact.comment),
-  ].join("");
+function formatWhatsappLink(value) {
+  if (!hasValue(value)) return "";
 
-  if (!rows.trim()) return "";
+  const whatsappNumber = normalizePhoneForWhatsapp(value);
+
+  if (!whatsappNumber) {
+    return escapeHtml(value);
+  }
+
+  return `<a class="phone-link" href="https://wa.me/${escapeHtml(
+    whatsappNumber
+  )}" target="_blank" rel="noopener noreferrer">${escapeHtml(value)}</a>`;
+}
+
+function formatContactTable(contact = {}) {
+  const rows = [];
+
+  rows.push(compactRow("Mode de contact", getContactModeLabel(contact.contactMode)));
+  rows.push(compactRow("Prénom", contact.firstName));
+  rows.push(compactRow("Nom", contact.lastName));
+
+  if (contact.contactMode === "whatsapp") {
+    const whatsappNumber = contact.whatsapp || contact.phone;
+
+    rows.push(
+      compactRow("WhatsApp", formatWhatsappLink(whatsappNumber), {
+        rawHtml: true,
+        labelEmphasis: true,
+      })
+    );
+  } else if (contact.contactMode === "phone") {
+    const phoneNumber = contact.phone || contact.whatsapp;
+
+    rows.push(
+      compactRow("Téléphone", formatPhoneLink(phoneNumber), {
+        rawHtml: true,
+        labelEmphasis: true,
+      })
+    );
+  } else if (contact.contactMode === "email") {
+    rows.push(compactRow("Email", contact.email));
+
+    if (hasValue(contact.phone)) {
+      rows.push(
+        compactRow("Téléphone complémentaire", formatPhoneLink(contact.phone), {
+          rawHtml: true,
+        })
+      );
+    }
+
+    if (hasValue(contact.whatsapp)) {
+      rows.push(
+        compactRow("WhatsApp complémentaire", formatWhatsappLink(contact.whatsapp), {
+          rawHtml: true,
+        })
+      );
+    }
+  } else {
+    if (hasValue(contact.phone)) {
+      rows.push(
+        compactRow("Téléphone", formatPhoneLink(contact.phone), {
+          rawHtml: true,
+        })
+      );
+    }
+
+    if (hasValue(contact.whatsapp)) {
+      rows.push(
+        compactRow("WhatsApp", formatWhatsappLink(contact.whatsapp), {
+          rawHtml: true,
+        })
+      );
+    }
+
+    if (hasValue(contact.email)) {
+      rows.push(compactRow("Email", contact.email));
+    }
+  }
+
+  rows.push(compactRow("Jours préférés", contact.preferredDays));
+  rows.push(compactRow("Plage horaire préférée", contact.preferredTimeSlot));
+  rows.push(compactRow("Commentaire", contact.comment));
+
+  const htmlRows = rows.filter(Boolean).join("");
+
+  if (!htmlRows.trim()) return "";
 
   return `
     <h2 class="section-title">Coordonnées client</h2>
     <table class="mini-table">
-      ${rows}
+      ${htmlRows}
     </table>
   `;
 }
+
 
 function getBudgetValue(budgetBreakdown, keys = []) {
   for (const key of keys) {
@@ -1160,8 +1265,95 @@ function getDestinationForComments(request = {}) {
   return request?.destination || request?.result?.destination || request?.result || {};
 }
 
-function getCommentFromDestination(destination = {}, key) {
+function getCommentFromDestination(destination = {}, key, userAnswers = {}) {
+  if (hasValue(destination?.comments?.[key])) {
+    return destination.comments[key];
+  }
+
+  if (key.startsWith("transportModes_")) {
+    const subKey = key.split("_")[1];
+
+    if (hasValue(destination?.comments?.transportModes?.[subKey])) {
+      return destination.comments.transportModes[subKey];
+    }
+  }
+
+  if (key === "trek") {
+    const trekLevel = Number(
+      userAnswers?.trekLevel ||
+        userAnswers?.trekDuration ||
+        userAnswers?.trek
+    );
+
+    const trekKeys = [
+      `trek.${trekLevel}c`,
+      `trek_${trekLevel}c`,
+      `trek${trekLevel}c`,
+      `trek.${trekLevel}.c`,
+      `trek.${trekLevel}C`,
+      `trek_${trekLevel}C`,
+      `trek${trekLevel}C`,
+    ];
+
+    for (const trekKey of trekKeys) {
+      if (hasValue(destination?.[trekKey])) {
+        return destination[trekKey];
+      }
+    }
+
+    if (destination?.trek && typeof destination.trek === "object") {
+      if (hasValue(destination.trek?.[`${trekLevel}c`])) {
+        return destination.trek[`${trekLevel}c`];
+      }
+
+      if (hasValue(destination.trek?.[trekLevel]?.c)) {
+        return destination.trek[trekLevel].c;
+      }
+
+      if (hasValue(destination.trek?.c)) {
+        return destination.trek.c;
+      }
+    }
+  }
+
+  const aliasKeys = {
+    transportModes_voiture: [
+      "voiturec",
+      "voitureC",
+      "transportModes.voiturec",
+      "transportModes_voiturec",
+    ],
+    transportModes_commun: [
+      "communc",
+      "communC",
+      "busc",
+      "busC",
+      "transportModes.communc",
+      "transportModes_communc",
+    ],
+    transportModes_taxi: [
+      "taxic",
+      "taxiC",
+      "transportModes.taxic",
+      "transportModes_taxic",
+    ],
+    transportModes_vtc: [
+      "vtcc",
+      "vtcC",
+      "transportModes.vtcc",
+      "transportModes_vtcc",
+    ],
+    admin: [
+      "adminc",
+      "adminC",
+      "papierc",
+      "papiersc",
+      "papiersC",
+    ],
+  };
+
   const possibleKeys = [
+    ...(aliasKeys[key] || []),
     `${key}c`,
     `${key}C`,
     `${key}_comment`,
@@ -1172,7 +1364,7 @@ function getCommentFromDestination(destination = {}, key) {
   ];
 
   for (const possibleKey of possibleKeys) {
-    const value = destination[possibleKey];
+    const value = destination?.[possibleKey];
 
     if (hasValue(value)) {
       return value;
@@ -1181,7 +1373,6 @@ function getCommentFromDestination(destination = {}, key) {
 
   return "";
 }
-
 function readMonthlyValue(destination = {}, possibleBases = [], monthKey) {
   if (!destination || !monthKey) return null;
 
@@ -1307,21 +1498,61 @@ function formatDestinationTemperatures({ request, userAnswers }) {
   `;
 }
 
+function isDisplayedCommentActive(item, userAnswers = {}) {
+  const key = item.key;
+
+  if (key === "admin") {
+    const selectedPapers = getSelectedPapers(userAnswers);
+
+    return (
+      userAnswers.papiersEnabled === true ||
+      selectedPapers.length > 0
+    );
+  }
+
+  if (key.startsWith("transportModes_")) {
+    const subKey = key.split("_")[1];
+    const modes = userAnswers.transportModes || {};
+
+    if (isModeActive(modes.indifferent)) return false;
+
+    if (subKey === "vtc") {
+      return isModeActive(modes.vtc);
+    }
+
+    if (subKey === "taxi") {
+      return isModeActive(modes.taxi) && !isModeActive(modes.vtc);
+    }
+
+    return isModeActive(modes[subKey]);
+  }
+
+  const answerValue = Number(userAnswers?.[key]);
+
+  return Number.isFinite(answerValue) && answerValue > 0;
+}
+
 function formatDisplayedComments({ request, userAnswers }) {
   if (request?.mode === "customDestination") {
     return "";
   }
 
   const destination = getDestinationForComments(request);
-  const temperaturesHtml = formatDestinationTemperatures({ request, userAnswers });
+
+  const temperaturesHtml = formatDestinationTemperatures({
+    request,
+    userAnswers,
+  });
 
   const rows = COMMENT_CONFIG
     .map((item) => {
-      const answerValue = Number(userAnswers?.[item.key]);
+      if (!isDisplayedCommentActive(item, userAnswers)) return "";
 
-      if (!Number.isFinite(answerValue) || answerValue <= 0) return "";
-
-      const comment = getCommentFromDestination(destination, item.key);
+      const comment = getCommentFromDestination(
+        destination,
+        item.key,
+        userAnswers
+      );
 
       if (!hasValue(comment)) return "";
 
@@ -1351,7 +1582,6 @@ function formatDisplayedComments({ request, userAnswers }) {
     }
   `;
 }
-
 function buildEmailHtml(payload, orderId) {
   const { contact, request } = payload;
 
