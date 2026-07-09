@@ -385,15 +385,45 @@ function getContactModeLabel(mode) {
 function compactRow(label, value, options = {}) {
   if (!hasValue(value)) return "";
 
-  const rowClass = options.highlight ? " important-row" : "";
-  const valueClass = options.highlight ? " important-value" : "";
-  const valueHtml = options.rawHtml ? value : escapeHtml(value);
+  const displayValue = Array.isArray(value) ? value.join(", ") : value;
+
+  const labelStyle = options.highlight
+    ? "width:42%; padding:9px 8px; border-bottom:1px solid #eee; color:#5b2b72; font-size:13px; font-weight:800;"
+    : "width:42%; padding:7px 8px; border-bottom:1px solid #eee; color:#6c5b75; font-size:13px;";
+
+  const valueStyle = options.highlight
+    ? "padding:9px 8px; border-bottom:1px solid #eee; color:#2f2440; font-size:16px; font-weight:950;"
+    : "padding:7px 8px; border-bottom:1px solid #eee; color:#2f2440; font-size:13px; font-weight:700;";
+
+  const finalValue = options.rawHtml
+    ? displayValue
+    : escapeHtml(displayValue);
 
   return `
-    <tr class="mini-row${rowClass}">
-      <td class="mini-label">${escapeHtml(label)}</td>
-      <td class="mini-value${valueClass}">${valueHtml}</td>
+    <tr>
+      <td style="${labelStyle}">${escapeHtml(label)}</td>
+      <td style="${valueStyle}">${finalValue}</td>
     </tr>
+  `;
+}
+
+function formatPeriodHtml(periodLabel) {
+  if (!hasValue(periodLabel)) return "";
+
+  const text = String(periodLabel);
+  const match = text.match(/^(.*?)\s*(\(.+\))$/);
+
+  if (!match) {
+    return `<span style="font-size:16px; font-weight:950; color:#2f2440;">${escapeHtml(text)}</span>`;
+  }
+
+  return `
+    <span style="font-size:16px; font-weight:950; color:#2f2440;">
+      ${escapeHtml(match[1].trim())}
+    </span>
+    <span style="font-size:12px; font-weight:500; color:#7a6a85;">
+      ${escapeHtml(match[2])}
+    </span>
   `;
 }
 
@@ -670,33 +700,21 @@ function formatSummaryTable(
   const rankLabel = getDestinationRankLabel(request?.destinationRank);
 
   const rows = [
-    [
-      "Destination",
-      `<span class="summary-important-value">${escapeHtml(destinationName)}</span>`,
-      { rawHtml: true },
-    ],
+    ["Destination", destinationName, { highlight: true }],
     [
       "Voyageurs",
-      userAnswers.travelers
-        ? `<span class="summary-important-value">${escapeHtml(
-            userAnswers.travelers
-          )}</span>`
-        : "",
-      { rawHtml: true },
+      userAnswers.travelers ? `${userAnswers.travelers}` : "",
+      { highlight: true },
     ],
     [
       "Durée",
-      userAnswers.tripDays
-        ? `<span class="summary-important-value">${escapeHtml(
-            `${userAnswers.tripDays} jours`
-          )}</span>`
-        : "",
-      { rawHtml: true },
+      userAnswers.tripDays ? `${userAnswers.tripDays} jours` : "",
+      { highlight: true },
     ],
     [
       "Période",
       formatPeriodHtml(periodLabel),
-      { rawHtml: true },
+      { highlight: true, rawHtml: true },
     ],
     ["Budget renseigné", formatMoney(userAnswers.budgetTotal)],
     ["Budget estimé par l'application", formatMoney(estimatedBudget)],
@@ -817,37 +835,40 @@ function isTransportModeActive(value) {
   );
 }
 
+function isModeActive(value) {
+  return value === true || value === 1 || value === "1" || value === "true";
+}
+
 function getSelectedTransportModes(userAnswers = {}) {
-  const modes = userAnswers.transportModes || {};
-
-  if (isTransportModeActive(modes.indifferent)) {
-    return [];
-  }
-
+  const modes = userAnswers?.transportModes || {};
   const labels = [];
 
-  if (isTransportModeActive(modes.voiture)) {
+  if (isModeActive(modes.voiture)) {
     labels.push(
-      userAnswers.avion === "non"
+      userAnswers?.avion === "non"
         ? "Voiture personnelle"
         : "Voiture de location"
     );
   }
 
-  if (isTransportModeActive(modes.commun)) {
+  if (isModeActive(modes.commun)) {
     labels.push("Transports en commun");
   }
 
-  if (isTransportModeActive(modes.taxi)) {
-    labels.push("Taxi");
-  }
-
-  if (isTransportModeActive(modes.vtc)) {
+  // IMPORTANT :
+  // Dans ton écran, VTC est une sous-option de Taxi.
+  // Donc si vtc = true, taxi = true aussi.
+  // Pour le mail, on affiche VTC à la place de Taxi.
+  if (isModeActive(modes.vtc)) {
     labels.push("VTC");
+  } else if (isModeActive(modes.taxi)) {
+    labels.push("Taxi");
   }
 
   return labels;
 }
+
+
 
 function getSelectedPapers(userAnswers = {}) {
   const papiers = userAnswers.papiers || {};
@@ -1032,38 +1053,47 @@ function formatGroupedThemes(userAnswers = {}) {
   `;
 }
 
-function formatBudgetBreakdown(budgetBreakdown = {}) {
-  const total = getBudgetValue(budgetBreakdown, ["total"]);
-
+function formatBudgetBreakdown(budgetBreakdown) {
   const rows = [
-    ["Avion / trajet", getBudgetValue(budgetBreakdown, ["avion", "initialTransport"])],
-    ["Transport local", getBudgetValue(budgetBreakdown, ["transport", "localTransport"])],
-    ["Logement", getBudgetValue(budgetBreakdown, ["logement"])],
-    ["Nourriture", getBudgetValue(budgetBreakdown, ["bouffe", "food"])],
-    ["Activités", getBudgetValue(budgetBreakdown, ["activites", "activities"])],
-    ["Travel Planner", getBudgetValue(budgetBreakdown, ["travelPlanner", "planner"])],
-  ].filter(([, value]) => hasValue(value));
+    ["Transport initial", getBudgetValue(budgetBreakdown, ["avion", "initialTransport"]), false],
+    ["Transport local", getBudgetValue(budgetBreakdown, ["transport", "localTransport"]), false],
+    ["Logement", getBudgetValue(budgetBreakdown, ["logement"]), false],
+    ["Nourriture", getBudgetValue(budgetBreakdown, ["bouffe", "food"]), false],
+    ["Activités", getBudgetValue(budgetBreakdown, ["activites", "activities"]), false],
+    ["Rémunération Travel Planner", getBudgetValue(budgetBreakdown, ["travelPlanner", "planner"]), false],
+    ["Total estimé", getBudgetValue(budgetBreakdown, ["total"]), true],
+  ].filter(([, value]) => value !== null && value !== undefined && value !== "");
 
-  if (!rows.length && !hasValue(total)) return "";
+  if (!rows.length) return "";
 
   return `
     <h2 class="section-title">Budget estimé par l'application</h2>
 
-    ${
-      hasValue(total)
-        ? `
-          <div class="budget-total-highlight">
-            <span>Budget total estimé</span>
-            <strong>${escapeHtml(formatMoney(total))}</strong>
-          </div>
-        `
-        : ""
-    }
-
     <table class="mini-table">
-      ${rows
-        .map(([label, value]) => compactRow(label, formatMoney(value)))
-        .join("")}
+      <tbody>
+        ${rows
+          .map(([label, value, isTotal]) => {
+            const labelStyle = isTotal
+              ? "padding:13px 8px; border-top:2px solid #eadcf4; font-size:15px; font-weight:900; color:#5b2b72;"
+              : "padding:9px 8px; border-bottom:1px solid #eee; color:#6c5b75;";
+
+            const valueStyle = isTotal
+              ? "padding:13px 8px; border-top:2px solid #eadcf4; text-align:right; font-size:22px; font-weight:950; color:#8d45b5;"
+              : "padding:9px 8px; border-bottom:1px solid #eee; text-align:right; font-weight:800; color:#2f2440;";
+
+            return `
+              <tr>
+                <td style="${labelStyle}">
+                  ${escapeHtml(label)}
+                </td>
+                <td style="${valueStyle}">
+                  ${escapeHtml(formatMoney(value))}
+                </td>
+              </tr>
+            `;
+          })
+          .join("")}
+      </tbody>
     </table>
   `;
 }
