@@ -368,13 +368,11 @@ const handlePlanTrip = (payload) => {
   setPlannedTrip({
     destination,
     budgetBreakdown,
-    destinationRank:
-      payload?.destinationRank ??
-      payload?.rank ??
-      payload?.topRank ??
-      payload?.index + 1 ??
-      destination?.rank ??
-      null,
+    destinationRank: payload?.destinationRank ?? null,
+    selectedMonth: payload?.selectedMonth ?? userAnswers.selectedMonth,
+    exactDates: payload?.exactDates ?? userAnswers.exactDates,
+    travelPeriodLabel: payload?.travelPeriodLabel ?? "",
+    travelPeriodType: payload?.travelPeriodType ?? "",
   });
 
   goTo("plan-trip");
@@ -671,13 +669,17 @@ const buildEmailContext = () => {
 )}
 
 {step === "plan-trip" && plannedTrip?.destination && (
-<PlanTripScreen
-  destination={plannedTrip.destination}
-  budgetBreakdown={plannedTrip.budgetBreakdown}
-  destinationRank={plannedTrip.destinationRank}
-  onBack={goBack}
-  onInterested={handleTripInterest}
-/>
+  <PlanTripScreen
+    destination={plannedTrip.destination}
+    budgetBreakdown={plannedTrip.budgetBreakdown}
+    destinationRank={plannedTrip.destinationRank}
+    selectedMonth={plannedTrip.selectedMonth}
+    exactDates={plannedTrip.exactDates}
+    travelPeriodLabel={plannedTrip.travelPeriodLabel}
+    travelPeriodType={plannedTrip.travelPeriodType}
+    onBack={goBack}
+    onInterested={handleTripInterest}
+  />
 )}
 {step === "contact" && contactRequest && (
   <ContactScreen

@@ -1496,11 +1496,20 @@ const cleanBudgetAdvice = getCleanBudgetAdvice(userAnswers);
     <button
       type="button"
       className="app-btn gold two-lines main"
-      onClick={() =>
+onClick={() =>
   onPlanTrip?.({
     destination: res,
     budgetBreakdown,
     destinationRank: selectedIndex + 1,
+    selectedMonth,
+    exactDates,
+    travelPeriodLabel: periodCardInfo?.value || periodLabel,
+    travelPeriodType:
+      exactDates?.from || exactDates?.to
+        ? "exact"
+        : selectedMonth === "best"
+        ? "best"
+        : "fixed",
   })
 }
     >

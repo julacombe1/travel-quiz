@@ -51,6 +51,11 @@ function getBudgetRows(budgetBreakdown = {}) {
 export default function PlanTripScreen({
   destination,
   budgetBreakdown,
+  destinationRank,
+  selectedMonth,
+  exactDates,
+  travelPeriodLabel,
+  travelPeriodType,
   onBack,
   onInterested,
 }) {
@@ -67,6 +72,23 @@ const handleOtherDestinationSubmit = () => {
   const cleanDestinationName = otherDestinationName.trim();
 const openRequestForDestination = (name, isCustomDestination = false) => {
   const cleanName = String(name ?? "").trim();
+const destinationName = destination?.nom || destination?.name || "cette destination";
+
+const cleanTravelPeriodLabel = travelPeriodLabel || "";
+
+const travelPeriodText =
+  cleanTravelPeriodLabel && travelPeriodType === "best"
+    ? `${cleanTravelPeriodLabel} — meilleur mois calculé`
+    : cleanTravelPeriodLabel && travelPeriodType === "fixed"
+    ? `${cleanTravelPeriodLabel} — mois choisi`
+    : cleanTravelPeriodLabel;
+
+const buttonPeriodText =
+  cleanTravelPeriodLabel && travelPeriodType === "best"
+    ? ` en ${cleanTravelPeriodLabel}`
+    : cleanTravelPeriodLabel && travelPeriodType === "fixed"
+    ? ` en ${cleanTravelPeriodLabel}`
+    : "";
 
   if (!cleanName) return;
 
@@ -128,7 +150,11 @@ const handleOtherDestinationSubmit = () => {
             <br />
             sans le stress de l&apos;organisation !
           </h1>
-
+          {travelPeriodText && (
+  <p className="plan-trip-period">
+    📅 {travelPeriodText}
+  </p>
+)}
           <p className="plan-trip-destination">
             Projet pour : <strong>{destinationName}</strong>
           </p>
@@ -192,19 +218,21 @@ const handleOtherDestinationSubmit = () => {
   <button
     type="button"
     className="app-btn gold plan-trip-interest-btn"
-    onClick={() =>
-      onInterested?.({
-        type: "selected-destination",
-        destination,
-        destinationName,
-        isCustomDestination: false,
-        budgetBreakdown,
-      })
-    }
-  >
-    <span>Ça m&apos;intéresse pour</span>
-    <span>{destinationName}</span>
-  </button>
+  onClick={() =>
+    onInterested?.({
+      destination,
+      budgetBreakdown,
+      destinationRank,
+      selectedMonth,
+      exactDates,
+      travelPeriodLabel,
+      travelPeriodType,
+    })
+  }
+>
+  Ça m’intéresse pour {destinationName}
+  {buttonPeriodText}
+</button>
 
   <button
     type="button"

@@ -397,7 +397,22 @@ function formatDateFr(value) {
   return date.toLocaleDateString("fr-FR");
 }
 
-function getTravelPeriodLabel(userAnswers = {}) {
+function getBestMonthFromRequest(request = {}) {
+  const destination = request?.destination || request?.result?.destination || request?.result || {};
+
+  return normalizeMonthKey(
+    request?.travelPeriodMonth ||
+      request?.monthKey ||
+      request?.bestMonthKey ||
+      request?.destination?.bestMonth ||
+      request?.destination?.bestMonthKey ||
+      destination?.bestMonth ||
+      destination?.bestMonthKey ||
+      ""
+  );
+}
+
+function getTravelPeriodLabel(userAnswers = {}, request = {}) {
   const exactDates = userAnswers.exactDates;
 
   if (exactDates?.from || exactDates?.to) {
@@ -407,11 +422,17 @@ function getTravelPeriodLabel(userAnswers = {}) {
   }
 
   if (userAnswers.selectedMonth === "best") {
-    return "Meilleur mois demandé automatiquement";
+    const bestMonth = getBestMonthFromRequest(request);
+
+    if (bestMonth) {
+      return `${getMonthLabel(bestMonth)} (Meilleur mois demandé)`;
+    }
+
+    return "Meilleur mois demandé";
   }
 
   if (userAnswers.selectedMonth) {
-    return getMonthLabel(userAnswers.selectedMonth);
+    return `${getMonthLabel(userAnswers.selectedMonth)} (Mois fixé par l'utilisateur)`;
   }
 
   return "";
@@ -540,20 +561,17 @@ function formatRelaunchInfo(userAnswers = {}) {
 
 function formatSummaryTable(userAnswers = {}, budgetBreakdown = {}, request = {}, destinationName = "") {
   const estimatedBudget = getBudgetValue(budgetBreakdown, ["total"]);
-  const periodLabel = getTravelPeriodLabel(userAnswers);
+  const periodLabel = getTravelPeriodLabel(userAnswers, request);
   const rankLabel = getDestinationRankLabel(request?.destinationRank);
 
   const rows = [
     ["Destination", destinationName],
-    rankLabel ? ["Classement", rankLabel] : null,
     ["Voyageurs", userAnswers.travelers || ""],
     ["Durée", userAnswers.tripDays ? `${userAnswers.tripDays} jours` : ""],
     ["Période", periodLabel],
     ["Budget renseigné", formatMoney(userAnswers.budgetTotal)],
     ["Budget estimé", formatMoney(estimatedBudget)],
-    userAnswers.usedFinalBudgetRelaunch === true
-      ? ["Relance budget", "Utilisée depuis l’écran résultat"]
-      : null,
+    rankLabel ? ["Position au classement", rankLabel] : null,
   ].filter(Boolean);
 
   return `
