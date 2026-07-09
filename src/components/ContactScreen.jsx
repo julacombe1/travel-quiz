@@ -152,10 +152,10 @@ const [feedbackPopup, setFeedbackPopup] = useState(null);
 
     if (currentForm.contactMode === "whatsapp") {
       if (!currentForm.whatsapp.trim()) {
-        nextErrors.whatsapp = "Le numéro WhatsApp est obligatoire.";
+        nextErrors.whatsapp = "Le numéro de téléphone pour WhatsApp est obligatoire.";
       } else if (!isValidPhone(currentForm.whatsapp)) {
         nextErrors.whatsapp =
-          "Le numéro WhatsApp semble invalide. Exemple : 0612345678 ou +33612345678.";
+          "Le numéro de téléphone pour WhatsApp semble invalide. Exemple : 0612345678 ou +33612345678.";
       }
 
       if (currentForm.email.trim() && !isValidEmail(currentForm.email)) {
@@ -411,7 +411,7 @@ const handleContactModeClick = (modeId) => {
                 {requiresWhatsapp && (
                   <label className="contact-field full">
                     <span>
-                      Numéro WhatsApp <strong>*</strong>
+                      Numéro de téléphone pour WhatsApp <strong>*</strong>
                     </span>
 <input
   type="tel"

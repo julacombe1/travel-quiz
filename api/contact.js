@@ -1,4 +1,8 @@
 import { Resend } from "resend";
+import {
+  getDestinationMonthValue as getCoeffMonthValue,
+  getWeightedMonthValue as getCoeffWeightedMonthValue,
+} from "../src/engine/coefftemp.js";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -1442,35 +1446,52 @@ function readMonthlyValue(destination = {}, possibleBases = [], monthKey) {
   return null;
 }
 
+function getDisplayedTemperatureForMail(destination, themeKey, userAnswers = {}, request = {}) {
+  const exactDates = userAnswers?.exactDates;
+
+  if (exactDates?.from && exactDates?.to) {
+    return getCoeffWeightedMonthValue(
+      destination,
+      themeKey,
+      exactDates.from,
+      exactDates.to
+    );
+  }
+
+  const monthKey = getMonthKeyForDestinationInfo(userAnswers, request);
+
+  if (!monthKey) return null;
+
+  return getCoeffMonthValue(destination, themeKey, monthKey);
+}
+
 function formatDestinationTemperatures({ request, userAnswers }) {
   if (request?.mode === "customDestination") return "";
 
   const destination = request?.destination || {};
+  const exactDates = userAnswers?.exactDates;
+  const hasExactDates = exactDates?.from && exactDates?.to;
+
   const monthKey = getMonthKeyForDestinationInfo(userAnswers, request);
   const monthLabel = getMonthLabel(monthKey);
 
+  const periodLabel = hasExactDates
+    ? "intervalle sélectionné"
+    : monthLabel || "";
+
   const rows = [];
 
-  const airTemp = readMonthlyValue(
+  const airTemp = getDisplayedTemperatureForMail(
     destination,
-    [
-      "temp",
-      "temperature",
-      "temperatureAir",
-      "tempAir",
-      "tempmoy",
-      "temperatureMoy",
-      "chaleur",
-      "chal",
-      "t",
-    ],
-    monthKey
+    "chal",
+    userAnswers,
+    request
   );
 
   if (hasValue(airTemp)) {
     rows.push([
-      `Température destination ${monthLabel ? `(${monthLabel})` : ""}`,
-      formatNumber(airTemp, "°C"),
+      `Température destination ${periodLabel ? `(${periodLabel})` : ""}`,
+      formatNumber(Math.round(Number(airTemp) * 10) / 10, "°C"),
     ]);
   }
 
@@ -1479,47 +1500,31 @@ function formatDestinationTemperatures({ request, userAnswers }) {
 
   const hasInsoWaterTheme = Number(userAnswers.inso) > 0;
 
-  const merTemp = readMonthlyValue(
+  const merTemp = getDisplayedTemperatureForMail(
     destination,
-    [
-      "mer",
-      "teau",
-      "eau",
-      "tempMer",
-      "temperatureMer",
-      "merTemp",
-      "tempEauMer",
-      "temperatureEauMer",
-    ],
-    monthKey
+    "mer",
+    userAnswers,
+    request
   );
 
-  const insoTemp = readMonthlyValue(
+  const insoTemp = getDisplayedTemperatureForMail(
     destination,
-    [
-      "inso",
-      "tempInso",
-      "temperatureInso",
-      "eauInso",
-      "tempEauInso",
-      "temperatureEauInso",
-    ],
-    monthKey
+    "inso",
+    userAnswers,
+    request
   );
 
   if (hasSeaWaterTheme && hasValue(merTemp)) {
     rows.push([
-      `Température de l’eau mer ${monthLabel ? `(${monthLabel})` : ""}`,
-      formatNumber(merTemp, "°C"),
+      `Température de l’eau mer ${periodLabel ? `(${periodLabel})` : ""}`,
+      formatNumber(Math.round(Number(merTemp) * 10) / 10, "°C"),
     ]);
   }
 
   if (hasInsoWaterTheme && hasValue(insoTemp)) {
     rows.push([
-      `Température de baignade insolite ${
-        monthLabel ? `(${monthLabel})` : ""
-      }`,
-      formatNumber(insoTemp, "°C"),
+      `Température de baignade insolite ${periodLabel ? `(${periodLabel})` : ""}`,
+      formatNumber(Math.round(Number(insoTemp) * 10) / 10, "°C"),
     ]);
   }
 
@@ -1532,8 +1537,6 @@ function formatDestinationTemperatures({ request, userAnswers }) {
     </table>
   `;
 }
-
-
 
 function isDisplayedCommentActive(item, userAnswers = {}) {
   const key = item.key;
@@ -1590,12 +1593,17 @@ function formatDisplayedComments({ request, userAnswers }) {
 
       if (!hasValue(comment)) return "";
 
-      return `
-        <li>
-          <strong>${escapeHtml(item.icon)} ${escapeHtml(item.label)} :</strong>
-          ${escapeHtml(comment)}
-        </li>
-      `;
+return `
+  <li>
+    <span class="comment-row">
+      <span class="comment-icon">${escapeHtml(item.icon)}</span>
+      <span class="comment-content">
+        <span class="comment-title">${escapeHtml(item.label)} :</span>
+        ${escapeHtml(comment)}
+      </span>
+    </span>
+  </li>
+`;
     })
     .filter(Boolean)
     .join("");
@@ -1718,16 +1726,45 @@ function buildEmailHtml(payload, orderId) {
           text-align: right;
         }
 
-        .comment-list {
-          margin-top: 6px;
-          padding-left: 18px;
-        }
+.comment-list {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
 
-        .comment-list li {
-          margin-bottom: 5px;
-          font-size: 13px;
-          line-height: 1.35;
-        }
+.comment-list li {
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.comment-row {
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.comment-icon {
+  display: table-cell;
+  width: 28px;
+  min-width: 28px;
+  padding-right: 6px;
+  vertical-align: top;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.comment-content {
+  display: table-cell;
+  vertical-align: top;
+}
+
+.comment-title {
+  font-weight: bold;
+  color: #2f2440;
+}
         .summary-card {
   margin: 14px 0 18px;
   padding: 14px;
