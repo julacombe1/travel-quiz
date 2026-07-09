@@ -6,7 +6,7 @@ const CONTACT_MODES = [
     id: "phone",
     icon: "📞",
     title: "Par téléphone",
-    subtitle: "Aurélie vous rappelle directement",
+    subtitle: "Aurélie te rappelle directement",
   },
   {
     id: "whatsapp",
@@ -18,7 +18,7 @@ const CONTACT_MODES = [
     id: "email",
     icon: "✉️",
     title: "Par mail",
-    subtitle: "Vous recevez une réponse détaillée",
+    subtitle: "Tu reçois une réponse détaillée",
   },
 ];
 
@@ -81,6 +81,7 @@ export default function ContactScreen({
 
   const [isSending, setIsSending] = useState(false);
 const [successInfo, setSuccessInfo] = useState(null);
+const [feedbackPopup, setFeedbackPopup] = useState(null);
 
   const destinationName = useMemo(() => {
     if (contactRequest?.customDestination) {
@@ -95,7 +96,7 @@ const [successInfo, setSuccessInfo] = useState(null);
       return contactRequest.result.destination.nom;
     }
 
-    return "votre voyage";
+    return "ton voyage";
   }, [contactRequest]);
 
   const requiresPhone = form.contactMode === "phone";
@@ -133,7 +134,7 @@ const [successInfo, setSuccessInfo] = useState(null);
     const nextErrors = {};
 
     if (!currentForm.contactMode) {
-      nextErrors.contactMode = "Choisissez un mode de contact.";
+      nextErrors.contactMode = "Choisis un mode de contact.";
     }
 
     if (currentForm.contactMode === "phone") {
@@ -178,6 +179,32 @@ const [successInfo, setSuccessInfo] = useState(null);
     return nextErrors;
   }
 
+function getUserFriendlyContactError(error) {
+  const message = String(error?.message || "").toLowerCase();
+
+  if (message.includes("failed to fetch") || message.includes("network")) {
+    return "La connexion au serveur a échoué. Vérifie ta connexion internet puis réessaie.";
+  }
+
+  if (message.includes("testing domain restriction")) {
+    return "La demande n’a pas pu être envoyée car l’adresse email de réception n’est pas autorisée en mode test.";
+  }
+
+  if (message.includes("resend")) {
+    return "Le service d’envoi d’email rencontre un problème. Merci de réessayer dans quelques instants.";
+  }
+
+  if (message.includes("données invalides") || message.includes("400")) {
+    return "Certaines informations semblent incomplètes ou incorrectes. Vérifie tes coordonnées puis réessaie.";
+  }
+
+  if (message.includes("500") || message.includes("server")) {
+    return "Le serveur a rencontré un problème temporaire. Merci de réessayer dans quelques instants.";
+  }
+
+  return "La demande n’a pas pu être envoyée pour le moment. Merci de réessayer dans quelques instants.";
+}
+
 async function handleSubmit(event) {
   event.preventDefault();
 
@@ -204,69 +231,85 @@ async function handleSubmit(event) {
     request: contactRequest,
   };
 
+try {
+  setIsSending(true);
+  setErrors({});
+  setSuccessInfo(null);
+  setFeedbackPopup(null);
+
+  const apiBaseUrl = import.meta.env.PROD
+    ? ""
+    : import.meta.env.VITE_API_URL || "http://localhost:3001";
+
+  console.log("API appelée :", `${apiBaseUrl}/api/contact`);
+  console.log("Payload envoyé :", contactPayload);
+
+  const response = await fetch(`${apiBaseUrl}/api/contact`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(contactPayload),
+  });
+
+  const rawText = await response.text();
+
+  console.log("Réponse brute serveur :", rawText);
+
+  let data = {};
+
   try {
-    setIsSending(true);
-    setErrors({});
-    setSuccessInfo(null);
-
-    const apiBaseUrl = import.meta.env.PROD
-      ? ""
-      : import.meta.env.VITE_API_URL || "http://localhost:3001";
-
-    console.log("API appelée :", `${apiBaseUrl}/api/contact`);
-    console.log("Payload envoyé :", contactPayload);
-
-    const response = await fetch(`${apiBaseUrl}/api/contact`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(contactPayload),
-    });
-
-    const rawText = await response.text();
-
-    console.log("Réponse brute serveur :", rawText);
-
-    let data = {};
-
-    try {
-      data = rawText ? JSON.parse(rawText) : {};
-    } catch {
-      data = {
-        message: rawText,
-      };
-    }
-
-    console.log("Réponse serveur contact :", response.status, data);
-
-    if (!response.ok) {
-      throw new Error(
-        data?.message ||
-          `Erreur serveur ${response.status} pendant l'envoi de la demande.`
-      );
-    }
-
-    setSuccessInfo({
-      orderId: data.orderId,
-      message:
-        "Votre demande a bien été envoyée. Aurélie reviendra vers vous prochainement.",
-    });
-
-    if (onSubmitContact) {
-      onSubmitContact(data);
-    }
-  } catch (error) {
-    console.error("Erreur envoi contact :", error);
-
-    setErrors({
-      submit:
-        error?.message ||
-        "Impossible d'envoyer la demande pour le moment. Merci de réessayer.",
-    });
-  } finally {
-    setIsSending(false);
+    data = rawText ? JSON.parse(rawText) : {};
+  } catch {
+    data = {
+      message: rawText,
+    };
   }
+
+  console.log("Réponse serveur contact :", response.status, data);
+
+  if (!response.ok) {
+    throw new Error(
+      data?.message ||
+        `Erreur serveur ${response.status} pendant l'envoi de la demande.`
+    );
+  }
+
+  const nextSuccessInfo = {
+    orderId: data.orderId,
+    message:
+      "Ta demande a bien été envoyée. Aurélie reviendra vers toi prochainement.",
+  };
+
+  setSuccessInfo(nextSuccessInfo);
+
+  setFeedbackPopup({
+    type: "success",
+    title: "Demande envoyée ✅",
+    message: nextSuccessInfo.message,
+    orderId: data.orderId,
+  });
+
+  if (onSubmitContact) {
+    onSubmitContact(data);
+  }
+} catch (error) {
+  console.error("Erreur envoi contact :", error);
+
+  const readableMessage = getUserFriendlyContactError(error);
+
+  setErrors({
+    submit: readableMessage,
+  });
+
+  setFeedbackPopup({
+    type: "error",
+    title: "Envoi impossible",
+    message: readableMessage,
+  });
+} finally {
+  setIsSending(false);
+}
 }
   return (
     <div className="contact-bg">
@@ -505,22 +548,6 @@ async function handleSubmit(event) {
             </section>
           )}
 
-{successInfo && (
-  <div className="contact-success">
-    <strong>Demande envoyée ✅</strong>
-    <p>{successInfo.message}</p>
-
-    {successInfo.orderId && (
-      <p>
-        Numéro de dossier : <strong>{successInfo.orderId}</strong>
-      </p>
-    )}
-  </div>
-)}
-
-{errors.submit && (
-  <p className="contact-error contact-submit-error">{errors.submit}</p>
-)}
           <footer className="contact-actions">
             <button type="button" className="contact-back-btn" onClick={onBack}>
               BACK
@@ -535,6 +562,37 @@ async function handleSubmit(event) {
 </button>
           </footer>
         </form>
+{feedbackPopup && (
+  <div className="contact-popup-backdrop">
+    <div
+      className={`contact-popup ${
+        feedbackPopup.type === "success" ? "success" : "error"
+      }`}
+    >
+      <div className="contact-popup-icon">
+        {feedbackPopup.type === "success" ? "✅" : "⚠️"}
+      </div>
+
+      <h2>{feedbackPopup.title}</h2>
+
+      <p>{feedbackPopup.message}</p>
+
+      {feedbackPopup.orderId && (
+        <p className="contact-popup-order">
+          Numéro de dossier : <strong>{feedbackPopup.orderId}</strong>
+        </p>
+      )}
+
+      <button
+        type="button"
+        className="contact-popup-btn"
+        onClick={() => setFeedbackPopup(null)}
+      >
+        OK
+      </button>
+    </div>
+  </div>
+)}        
       </main>
     </div>
   );

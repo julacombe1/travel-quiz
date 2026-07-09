@@ -436,12 +436,24 @@ function getMaxBudget(travelers = 2) {
   return safeTravelers * 10000 + 5000;
 }
 
-function handleRelaunchWithMaxBudget() {
+function handleRelaunchWithMaxBudget(payload = {}) {
   setUserAnswers((currentAnswers) => {
     const shouldApplyStrictMinimum =
+      payload.applyStrictMinimum === true ||
       Number(currentAnswers.budgetLogement) !== 1 ||
       Number(currentAnswers.budgetFood) !== 1 ||
       Number(currentAnswers.budgetActivite) !== 1;
+
+    const travelers = Number(currentAnswers.travelers) || 2;
+    const maxBudget = getMaxBudget(travelers);
+
+    const nextBudgetTotal =
+      payload.budgetTotal !== undefined && payload.budgetTotal !== null
+        ? Number(payload.budgetTotal)
+        : maxBudget;
+
+    const nextBudgetMaxSelected =
+      payload.budgetMaxSelected === true;
 
     const nextAnswers = {
       ...currentAnswers,
@@ -450,8 +462,9 @@ function handleRelaunchWithMaxBudget() {
 
       usedFinalBudgetRelaunch: true,
 
-      // Ton budget "illimité" ou budget max final
-      budgetTotal: getMaxBudget(currentAnswers.travelers),
+      budgetTotal: nextBudgetTotal,
+      budgetMaxSelected: nextBudgetMaxSelected,
+      budgetManuallyEdited: true,
 
       ...(shouldApplyStrictMinimum
         ? {
