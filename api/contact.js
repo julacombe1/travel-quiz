@@ -1533,39 +1533,6 @@ function formatDestinationTemperatures({ request, userAnswers }) {
   `;
 }
 
-function isDisplayedCommentActive(item, userAnswers = {}) {
-  const key = item.key;
-
-  if (key === "admin") {
-    const selectedPapers = getSelectedPapers(userAnswers);
-
-    return (
-      userAnswers.papiersEnabled === true ||
-      selectedPapers.length > 0
-    );
-  }
-
-  if (key.startsWith("transportModes_")) {
-    const subKey = key.split("_")[1];
-    const modes = userAnswers.transportModes || {};
-
-    if (isModeActive(modes.indifferent)) return false;
-
-    if (subKey === "vtc") {
-      return isModeActive(modes.vtc);
-    }
-
-    if (subKey === "taxi") {
-      return isModeActive(modes.taxi) && !isModeActive(modes.vtc);
-    }
-
-    return isModeActive(modes[subKey]);
-  }
-
-  const answerValue = Number(userAnswers?.[key]);
-
-  return Number.isFinite(answerValue) && answerValue > 0;
-}
 
 
 function isDisplayedCommentActive(item, userAnswers = {}) {
