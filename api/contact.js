@@ -1569,6 +1569,56 @@ function isDisplayedCommentActive(item, userAnswers = {}) {
   return Number.isFinite(answerValue) && answerValue > 0;
 }
 
+const COMMENTS_HIDE_IF_SCORE_ZERO = ["mer", "inso", "festi", "carna"];
+
+function getDisplayedCommentScore(destination = {}, key) {
+  if (key === "admin" || key.startsWith("transportModes_")) {
+    return 1;
+  }
+
+  return Number(destination?.scores?.[key]) || 0;
+}
+
+function shouldDisplayUserComment(item, destination = {}, userAnswers = {}) {
+  const key = item.key;
+
+  if (key === "admin") {
+    const selectedPapers = getSelectedPapers(userAnswers);
+    return userAnswers.papiersEnabled === true || selectedPapers.length > 0;
+  }
+
+  if (key.startsWith("transportModes_")) {
+    const subKey = key.split("_")[1];
+    const modes = userAnswers.transportModes || {};
+
+    if (isModeActive(modes.indifferent)) return false;
+
+    if (subKey === "vtc") {
+      return isModeActive(modes.vtc);
+    }
+
+    if (subKey === "taxi") {
+      return isModeActive(modes.taxi) && !isModeActive(modes.vtc);
+    }
+
+    return isModeActive(modes[subKey]);
+  }
+
+  const answerValue = Number(userAnswers?.[key]);
+
+  if (!Number.isFinite(answerValue) || answerValue <= 0) {
+    return false;
+  }
+
+  const score = getDisplayedCommentScore(destination, key);
+
+  if (COMMENTS_HIDE_IF_SCORE_ZERO.includes(key) && score <= 0) {
+    return false;
+  }
+
+  return true;
+}
+
 function formatDisplayedComments({ request, userAnswers }) {
   if (request?.mode === "customDestination") {
     return "";
@@ -1583,7 +1633,9 @@ function formatDisplayedComments({ request, userAnswers }) {
 
   const rows = COMMENT_CONFIG
     .map((item) => {
-      if (!isDisplayedCommentActive(item, userAnswers)) return "";
+      if (!shouldDisplayUserComment(item, destination, userAnswers)) {
+        return "";
+      }
 
       const comment = getCommentFromDestination(
         destination,
@@ -1593,17 +1645,18 @@ function formatDisplayedComments({ request, userAnswers }) {
 
       if (!hasValue(comment)) return "";
 
-return `
-  <li>
-    <span class="comment-row">
-      <span class="comment-icon">${escapeHtml(item.icon)}</span>
-      <span class="comment-content">
-        <span class="comment-title">${escapeHtml(item.label)} :</span>
-        ${escapeHtml(comment)}
-      </span>
-    </span>
-  </li>
-`;
+      return `
+        <tr>
+          <td style="width:28px; padding:6px 6px 6px 0; vertical-align:top; font-size:15px;">
+            ${escapeHtml(item.icon)}
+          </td>
+
+          <td style="padding:6px 0; vertical-align:top; font-size:13px; line-height:1.35; color:#2f2440;">
+            <strong style="font-weight:bold;">${escapeHtml(item.label)} :</strong>
+            ${escapeHtml(comment)}
+          </td>
+        </tr>
+      `;
     })
     .filter(Boolean)
     .join("");
@@ -1612,18 +1665,21 @@ return `
 
   return `
     <h2 class="section-title">Informations affichées à l'utilisateur</h2>
+
     ${temperaturesHtml}
+
     ${
       rows.trim()
         ? `
-          <ul class="comment-list">
+          <table style="width:100%; border-collapse:collapse; margin-top:6px;">
             ${rows}
-          </ul>
+          </table>
         `
         : ""
     }
   `;
 }
+
 
 function buildEmailHtml(payload, orderId) {
   const { contact, request } = payload;
