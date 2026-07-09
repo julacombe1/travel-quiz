@@ -291,13 +291,8 @@ function getThemeDisplayValue(theme, score, userAnswers = {}) {
     return `${score}/${theme.max}`;
   }
 
-  const trekLevel = Number(
-    userAnswers?.trekLevel ||
-      userAnswers?.trekDuration ||
-      userAnswers?.trek
-  );
-
-  const trekLabel = TREK_LEVELS[trekLevel];
+  const trekDurationLevel = Number(userAnswers?.trekDuration);
+  const trekLabel = TREK_LEVELS[trekDurationLevel];
 
   if (!trekLabel) {
     return `${score}/${theme.max}`;
@@ -1315,45 +1310,45 @@ function getCommentFromDestination(destination = {}, key, userAnswers = {}) {
     }
   }
 
-  if (key === "trek") {
-    const trekLevel = Number(
-      userAnswers?.trekLevel ||
-        userAnswers?.trekDuration ||
-        userAnswers?.trek
-    );
+ if (key === "trek") {
+  const trekDurationLevel = Number(userAnswers?.trekDuration);
 
-    const trekKeys = [
-      `trek.${trekLevel}c`,
-      `trek_${trekLevel}c`,
-      `trek${trekLevel}c`,
-      `trek.${trekLevel}.c`,
-      `trek.${trekLevel}C`,
-      `trek_${trekLevel}C`,
-      `trek${trekLevel}C`,
-      "trekc",
-      "trekC",
-    ];
+  const trekKeys =
+    Number.isFinite(trekDurationLevel) && trekDurationLevel > 0
+      ? [
+          `trek.${trekDurationLevel}c`,
+          `trek_${trekDurationLevel}c`,
+          `trek${trekDurationLevel}c`,
+          `trek.${trekDurationLevel}.c`,
+          `trek.${trekDurationLevel}C`,
+          `trek_${trekDurationLevel}C`,
+          `trek${trekDurationLevel}C`,
+          "trekc",
+          "trekC",
+        ]
+      : ["trekc", "trekC"];
 
-    for (const trekKey of trekKeys) {
-      if (hasValue(destination?.[trekKey])) {
-        return destination[trekKey];
-      }
-    }
-
-    if (destination?.trek && typeof destination.trek === "object") {
-      if (hasValue(destination.trek?.[`${trekLevel}c`])) {
-        return destination.trek[`${trekLevel}c`];
-      }
-
-      if (hasValue(destination.trek?.[trekLevel]?.c)) {
-        return destination.trek[trekLevel].c;
-      }
-
-      if (hasValue(destination.trek?.c)) {
-        return destination.trek.c;
-      }
+  for (const trekKey of trekKeys) {
+    if (hasValue(destination?.[trekKey])) {
+      return destination[trekKey];
     }
   }
+
+  if (destination?.trek && typeof destination.trek === "object") {
+    if (hasValue(destination.trek?.[`${trekDurationLevel}c`])) {
+      return destination.trek[`${trekDurationLevel}c`];
+    }
+
+    if (hasValue(destination.trek?.[trekDurationLevel]?.c)) {
+      return destination.trek[trekDurationLevel].c;
+    }
+
+    if (hasValue(destination.trek?.c)) {
+      return destination.trek.c;
+    }
+  }
+}
+
 
   const aliasKeys = {
     transportModes_voiture: [

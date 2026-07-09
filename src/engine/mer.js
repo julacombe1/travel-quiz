@@ -25,10 +25,10 @@ function getWaterTempCoef(userAnswers, destination, monthKey) {
   }
 
   if (delta <= 0) return 1;
-  if (delta <= 1) return 0.8;
-  if (delta <= 2) return 0.6;
-  if (delta <= 3) return 0.4;
-  if (delta <= 4) return 0.2;
+  if (delta <= 1) return 0.5;
+  if (delta <= 2) return 0;
+  if (delta <= 3) return 0;
+  if (delta <= 4) return 0;
 
   return 0;
 }
